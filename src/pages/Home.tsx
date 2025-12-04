@@ -1,12 +1,41 @@
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowUpRight, ArrowDownRight, TrendingUp, Wallet } from "lucide-react";
-import { Link } from "react-router-dom";
+import { ArrowUpRight, ArrowDownRight, TrendingUp, Wallet, LogIn, LogOut } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
+
+interface DemoUser {
+  email: string;
+  name: string;
+  vipLevel: number;
+  balance: number;
+}
 
 const Home = () => {
-  const balance = 2500000;
-  const vipLevel = 1;
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [user, setUser] = useState<DemoUser | null>(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("demoUser");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("demoUser");
+    setUser(null);
+    toast({
+      title: "Logout Berhasil",
+      description: "Sampai jumpa lagi!",
+    });
+  };
+
+  const balance = user?.balance || 2500000;
+  const vipLevel = user?.vipLevel || 1;
   
   const popularProducts = [
     {
@@ -42,12 +71,25 @@ const Home = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-foreground">Selamat Datang!</h1>
+          <h1 className="text-2xl font-heading font-bold text-foreground">
+            {user ? `Halo, ${user.name}!` : "Selamat Datang!"}
+          </h1>
           <p className="text-sm text-muted-foreground">Kelola investasi Anda dengan mudah</p>
         </div>
-        <Badge variant="vip" className="text-sm px-3 py-1">
-          VIP {vipLevel}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant="vip" className="text-sm px-3 py-1">
+            VIP {vipLevel}
+          </Badge>
+          {user ? (
+            <Button variant="ghost" size="icon" onClick={handleLogout}>
+              <LogOut className="w-5 h-5" />
+            </Button>
+          ) : (
+            <Button variant="ghost" size="icon" onClick={() => navigate("/auth")}>
+              <LogIn className="w-5 h-5" />
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Banner Promo */}
