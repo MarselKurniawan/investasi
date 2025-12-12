@@ -1,88 +1,27 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Package, TrendingUp } from "lucide-react";
+import { getCurrentUser, getAllProducts, formatCurrency, User } from "@/lib/store";
+import InvestDialog from "@/components/InvestDialog";
 
 const Product = () => {
-  const [userVipLevel] = useState(1);
+  const [user, setUser] = useState<User | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<ReturnType<typeof getAllProducts>[0] | null>(null);
+  const [investOpen, setInvestOpen] = useState(false);
 
-  const allProducts = [
-    // VIP 1
-    {
-      id: 1,
-      name: "Paket Investasi Starter",
-      price: 150000,
-      dailyIncome: 15000,
-      validity: 20,
-      totalIncome: 300000,
-      vipLevel: 1,
-    },
-    {
-      id: 2,
-      name: "Paket Investasi Basic",
-      price: 300000,
-      dailyIncome: 33000,
-      validity: 20,
-      totalIncome: 660000,
-      vipLevel: 1,
-    },
-    {
-      id: 3,
-      name: "Paket Investasi Pro",
-      price: 500000,
-      dailyIncome: 55000,
-      validity: 20,
-      totalIncome: 1100000,
-      vipLevel: 1,
-    },
-    // VIP 2
-    {
-      id: 4,
-      name: "Paket Premium A",
-      price: 1000000,
-      dailyIncome: 115000,
-      validity: 20,
-      totalIncome: 2300000,
-      vipLevel: 2,
-    },
-    {
-      id: 5,
-      name: "Paket Premium B",
-      price: 2000000,
-      dailyIncome: 240000,
-      validity: 20,
-      totalIncome: 4800000,
-      vipLevel: 2,
-    },
-    // VIP 3
-    {
-      id: 6,
-      name: "Paket Elite Gold",
-      price: 5000000,
-      dailyIncome: 625000,
-      validity: 20,
-      totalIncome: 12500000,
-      vipLevel: 3,
-    },
-    {
-      id: 7,
-      name: "Paket Elite Platinum",
-      price: 10000000,
-      dailyIncome: 1300000,
-      validity: 20,
-      totalIncome: 26000000,
-      vipLevel: 3,
-    },
-  ];
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(amount);
+  const loadData = () => {
+    setUser(getCurrentUser());
   };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const userVipLevel = user?.vipLevel || 1;
+  const balance = user?.balance || 0;
+  const allProducts = getAllProducts();
 
   const availableProducts = allProducts.filter(
     (product) => product.vipLevel <= userVipLevel
@@ -92,6 +31,11 @@ const Product = () => {
     (product) => product.vipLevel > userVipLevel
   );
 
+  const handleInvest = (product: typeof allProducts[0]) => {
+    setSelectedProduct(product);
+    setInvestOpen(true);
+  };
+
   return (
     <div className="space-y-6 p-4 pt-6">
       {/* Header */}
@@ -100,9 +44,14 @@ const Product = () => {
           <h1 className="text-2xl font-heading font-bold text-foreground">Katalog Produk</h1>
           <p className="text-sm text-muted-foreground">Pilih paket investasi terbaik</p>
         </div>
-        <Badge variant="vip" className="text-sm px-3 py-1">
-          VIP {userVipLevel}
-        </Badge>
+        <div className="text-right">
+          <Badge variant="vip" className="text-sm px-3 py-1">
+            VIP {userVipLevel}
+          </Badge>
+          <p className="text-xs text-muted-foreground mt-1">
+            Saldo: {formatCurrency(balance)}
+          </p>
+        </div>
       </div>
 
       {/* Available Products */}
@@ -144,14 +93,14 @@ const Product = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 mb-3 p-3 bg-success-light rounded-md">
+                <div className="flex items-center gap-2 mb-3 p-3 bg-success/10 rounded-md">
                   <TrendingUp className="w-4 h-4 text-success" />
                   <span className="text-sm font-medium text-success">
                     ROI: {((product.totalIncome / product.price - 1) * 100).toFixed(0)}%
                   </span>
                 </div>
 
-                <Button className="w-full">
+                <Button className="w-full" onClick={() => handleInvest(product)}>
                   Investasi Sekarang
                 </Button>
               </CardContent>
@@ -218,6 +167,15 @@ const Product = () => {
           </Card>
         </div>
       )}
+
+      {/* Invest Dialog */}
+      <InvestDialog
+        open={investOpen}
+        onOpenChange={setInvestOpen}
+        product={selectedProduct}
+        balance={balance}
+        onSuccess={loadData}
+      />
     </div>
   );
 };

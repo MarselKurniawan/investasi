@@ -1,14 +1,33 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Users, TrendingUp, Share2, Crown, Award } from "lucide-react";
+import { getCurrentUser, getTeamMembers, formatCurrency, User, TeamMember } from "@/lib/store";
+import ReferralDialog from "@/components/ReferralDialog";
 
 const Team = () => {
-  const currentVipLevel = 1;
-  const totalReferrals = 5;
-  const requiredReferrals = 10;
-  const progressPercentage = (totalReferrals / requiredReferrals) * 100;
+  const [user, setUser] = useState<User | null>(null);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [referralOpen, setReferralOpen] = useState(false);
+
+  useEffect(() => {
+    const currentUser = getCurrentUser();
+    if (currentUser) {
+      setUser(currentUser);
+      setTeamMembers(getTeamMembers(currentUser.id));
+    }
+  }, []);
+
+  const currentVipLevel = user?.vipLevel || 1;
+  const totalReferrals = teamMembers.length;
+
+  // VIP requirements
+  const vipRequirements = [0, 0, 5, 15, 30, 50]; // referrals needed for each VIP level
+  const nextVipLevel = Math.min(currentVipLevel + 1, 5);
+  const requiredReferrals = vipRequirements[nextVipLevel];
+  const progressPercentage = requiredReferrals > 0 ? Math.min((totalReferrals / requiredReferrals) * 100, 100) : 100;
 
   const teamTiers = [
     {
@@ -16,45 +35,37 @@ const Team = () => {
       name: "Bronze Team",
       commission: 1,
       requiredMembers: 5,
-      currentMembers: 5,
+      currentMembers: totalReferrals,
       color: "text-amber-700",
       bgColor: "bg-amber-50",
-      achieved: true,
+      achieved: totalReferrals >= 5,
     },
     {
       tier: "B",
       name: "Silver Team",
       commission: 4,
       requiredMembers: 15,
-      currentMembers: 5,
+      currentMembers: totalReferrals,
       color: "text-gray-600",
       bgColor: "bg-gray-50",
-      achieved: false,
+      achieved: totalReferrals >= 15,
     },
     {
       tier: "A",
       name: "Gold Team",
       commission: 10,
       requiredMembers: 30,
-      currentMembers: 5,
+      currentMembers: totalReferrals,
       color: "text-yellow-600",
       bgColor: "bg-yellow-50",
-      achieved: false,
+      achieved: totalReferrals >= 30,
     },
   ];
 
   const referralStats = {
-    totalEarnings: 450000,
-    activeMembers: 5,
-    pendingMembers: 2,
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(amount);
+    totalEarnings: user?.teamIncome || 0,
+    activeMembers: teamMembers.filter(m => m.status === 'active').length,
+    pendingMembers: teamMembers.filter(m => m.status === 'pending').length,
   };
 
   return (
@@ -73,7 +84,9 @@ const Team = () => {
               <Crown className="w-6 h-6 text-vip-gold" />
               <div>
                 <h3 className="font-bold text-lg text-foreground">Level VIP Anda</h3>
-                <p className="text-sm text-muted-foreground">Progress ke VIP {currentVipLevel + 1}</p>
+                {currentVipLevel < 5 && (
+                  <p className="text-sm text-muted-foreground">Progress ke VIP {nextVipLevel}</p>
+                )}
               </div>
             </div>
             <Badge variant="vip" className="text-base px-4 py-2">
@@ -81,20 +94,31 @@ const Team = () => {
             </Badge>
           </div>
 
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Referral Progress</span>
-              <span className="font-bold text-foreground">
-                {totalReferrals} / {requiredReferrals}
-              </span>
+          {currentVipLevel < 5 ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Referral Progress</span>
+                <span className="font-bold text-foreground">
+                  {totalReferrals} / {requiredReferrals}
+                </span>
+              </div>
+              <Progress value={progressPercentage} className="h-3" />
+              <p className="text-xs text-muted-foreground text-center">
+                Ajak {Math.max(0, requiredReferrals - totalReferrals)} teman lagi untuk naik ke VIP {nextVipLevel}
+              </p>
             </div>
-            <Progress value={progressPercentage} className="h-3" />
-            <p className="text-xs text-muted-foreground text-center">
-              Ajak {requiredReferrals - totalReferrals} teman lagi untuk naik ke VIP {currentVipLevel + 1}
-            </p>
-          </div>
+          ) : (
+            <div className="bg-success/10 rounded-lg p-4 text-center">
+              <p className="text-success font-semibold">🎉 Anda sudah mencapai VIP Tertinggi!</p>
+            </div>
+          )}
 
-          <Button variant="vip" className="w-full mt-4" size="lg">
+          <Button
+            variant="vip"
+            className="w-full mt-4"
+            size="lg"
+            onClick={() => setReferralOpen(true)}
+          >
             <Share2 className="w-4 h-4 mr-2" />
             Bagikan Kode Referral
           </Button>
@@ -159,11 +183,11 @@ const Team = () => {
                     <div className="flex items-center justify-between text-sm mb-2">
                       <span className="text-muted-foreground">Progress Anggota</span>
                       <span className="font-bold text-foreground">
-                        {tier.currentMembers} / {tier.requiredMembers}
+                        {Math.min(tier.currentMembers, tier.requiredMembers)} / {tier.requiredMembers}
                       </span>
                     </div>
                     <Progress
-                      value={(tier.currentMembers / tier.requiredMembers) * 100}
+                      value={Math.min((tier.currentMembers / tier.requiredMembers) * 100, 100)}
                       className="h-2"
                     />
                   </div>
@@ -197,31 +221,35 @@ const Team = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {[
-              { name: "User123", level: 1, earnings: 150000, status: "Aktif" },
-              { name: "User456", level: 1, earnings: 120000, status: "Aktif" },
-              { name: "User789", level: 1, earnings: 95000, status: "Aktif" },
-              { name: "User012", level: 0, earnings: 50000, status: "Pending" },
-              { name: "User345", level: 1, earnings: 35000, status: "Aktif" },
-            ].map((member, idx) => (
-              <div
-                key={idx}
-                className="flex items-center justify-between p-3 bg-muted rounded-lg"
-              >
-                <div>
-                  <p className="font-semibold text-sm text-foreground">{member.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    VIP {member.level} • {member.status}
-                  </p>
+          {teamMembers.length === 0 ? (
+            <div className="text-center py-8">
+              <Users className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+              <p className="text-muted-foreground">Belum ada anggota tim</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Bagikan kode referral untuk mengajak teman
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {teamMembers.map((member) => (
+                <div
+                  key={member.id}
+                  className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                >
+                  <div>
+                    <p className="font-semibold text-sm text-foreground">{member.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      VIP {member.vipLevel} • {member.status === 'active' ? 'Aktif' : 'Pending'}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-success">{formatCurrency(member.totalEarnings)}</p>
+                    <p className="text-xs text-muted-foreground">Total Komisi</p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-bold text-success">{formatCurrency(member.earnings)}</p>
-                  <p className="text-xs text-muted-foreground">Total Komisi</p>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -233,11 +261,18 @@ const Team = () => {
           <p className="text-sm opacity-90 mb-4">
             Ajak lebih banyak teman dan dapatkan komisi hingga 10%
           </p>
-          <Button variant="secondary" className="font-semibold">
-            Pelajari Lebih Lanjut
+          <Button variant="secondary" className="font-semibold" onClick={() => setReferralOpen(true)}>
+            Bagikan Sekarang
           </Button>
         </CardContent>
       </Card>
+
+      {/* Referral Dialog */}
+      <ReferralDialog
+        open={referralOpen}
+        onOpenChange={setReferralOpen}
+        referralCode={user?.referralCode || ''}
+      />
     </div>
   );
 };

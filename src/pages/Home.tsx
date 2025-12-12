@@ -2,27 +2,34 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowUpRight, ArrowDownRight, TrendingUp, Wallet, LogIn, LogOut } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, TrendingUp, Wallet, LogOut, ShieldCheck } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-
-interface DemoUser {
-  email: string;
-  name: string;
-  vipLevel: number;
-  balance: number;
-}
+import { getCurrentUser, getInvestments, formatCurrency, User, Investment } from "@/lib/store";
+import RechargeDialog from "@/components/RechargeDialog";
+import WithdrawDialog from "@/components/WithdrawDialog";
+import InvestDialog from "@/components/InvestDialog";
 
 const Home = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [user, setUser] = useState<DemoUser | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [investments, setInvestments] = useState<Investment[]>([]);
+  const [rechargeOpen, setRechargeOpen] = useState(false);
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
+  const [investOpen, setInvestOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<typeof popularProducts[0] | null>(null);
+
+  const loadData = () => {
+    const storedUser = getCurrentUser();
+    if (storedUser) {
+      setUser(storedUser);
+      setInvestments(getInvestments(storedUser.id));
+    }
+  };
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("demoUser");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    loadData();
   }, []);
 
   const handleLogout = () => {
@@ -32,11 +39,12 @@ const Home = () => {
       title: "Logout Berhasil",
       description: "Sampai jumpa lagi!",
     });
+    navigate("/auth");
   };
 
-  const balance = user?.balance || 2500000;
+  const balance = user?.balance || 0;
   const vipLevel = user?.vipLevel || 1;
-  
+
   const popularProducts = [
     {
       id: 1,
@@ -58,13 +66,14 @@ const Home = () => {
     },
   ];
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(amount);
+  const handleInvest = (product: typeof popularProducts[0]) => {
+    setSelectedProduct(product);
+    setInvestOpen(true);
   };
+
+  const activeInvestments = investments.filter(i => i.status === 'active');
+  const totalDailyIncome = activeInvestments.reduce((sum, i) => sum + i.dailyIncome, 0);
+  const totalTeamMembers = 0; // Can be calculated from team data
 
   return (
     <div className="space-y-6 p-4 pt-6">
@@ -80,13 +89,14 @@ const Home = () => {
           <Badge variant="vip" className="text-sm px-3 py-1">
             VIP {vipLevel}
           </Badge>
-          {user ? (
+          {user?.isAdmin && (
+            <Button variant="ghost" size="icon" onClick={() => navigate("/admin")}>
+              <ShieldCheck className="w-5 h-5 text-primary" />
+            </Button>
+          )}
+          {user && (
             <Button variant="ghost" size="icon" onClick={handleLogout}>
               <LogOut className="w-5 h-5" />
-            </Button>
-          ) : (
-            <Button variant="ghost" size="icon" onClick={() => navigate("/auth")}>
-              <LogIn className="w-5 h-5" />
             </Button>
           )}
         </div>
@@ -118,19 +128,45 @@ const Home = () => {
           <p className="text-3xl font-heading font-bold text-foreground mb-6">
             {formatCurrency(balance)}
           </p>
-          
+
           <div className="grid grid-cols-2 gap-3">
-            <Button variant="success" className="flex items-center gap-2">
+            <Button
+              variant="success"
+              className="flex items-center gap-2"
+              onClick={() => setRechargeOpen(true)}
+            >
               <ArrowUpRight className="w-4 h-4" />
               Recharge
             </Button>
-            <Button variant="outline" className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              className="flex items-center gap-2"
+              onClick={() => setWithdrawOpen(true)}
+            >
               <ArrowDownRight className="w-4 h-4" />
               Withdraw
             </Button>
           </div>
         </CardContent>
       </Card>
+
+      {/* Active Investments Summary */}
+      {activeInvestments.length > 0 && (
+        <Card className="shadow-card bg-success/5 border-success/20">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Investasi Aktif</p>
+                <p className="text-lg font-bold text-foreground">{activeInvestments.length} Paket</p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-muted-foreground">Income Harian</p>
+                <p className="text-lg font-bold text-success">{formatCurrency(totalDailyIncome)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Popular Products */}
       <div>
@@ -175,7 +211,7 @@ const Home = () => {
                   </div>
                 </div>
 
-                <Button className="w-full mt-3" size="sm">
+                <Button className="w-full mt-3" size="sm" onClick={() => handleInvest(product)}>
                   Investasi Sekarang
                 </Button>
               </CardContent>
@@ -189,16 +225,36 @@ const Home = () => {
         <Card className="shadow-card">
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground mb-2">Total Income</p>
-            <p className="text-xl font-bold text-success">{formatCurrency(1250000)}</p>
+            <p className="text-xl font-bold text-success">{formatCurrency(user?.totalIncome || 0)}</p>
           </CardContent>
         </Card>
         <Card className="shadow-card">
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground mb-2">Tim Aktif</p>
-            <p className="text-xl font-bold text-primary">12 Orang</p>
+            <p className="text-xl font-bold text-primary">{totalTeamMembers} Orang</p>
           </CardContent>
         </Card>
       </div>
+
+      {/* Dialogs */}
+      <RechargeDialog
+        open={rechargeOpen}
+        onOpenChange={setRechargeOpen}
+        onSuccess={loadData}
+      />
+      <WithdrawDialog
+        open={withdrawOpen}
+        onOpenChange={setWithdrawOpen}
+        balance={balance}
+        onSuccess={loadData}
+      />
+      <InvestDialog
+        open={investOpen}
+        onOpenChange={setInvestOpen}
+        product={selectedProduct}
+        balance={balance}
+        onSuccess={loadData}
+      />
     </div>
   );
 };
