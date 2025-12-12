@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,12 +7,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, TrendingUp, Shield, Users } from "lucide-react";
+import { registerUser, loginUser, getCurrentUser, getAllUsers } from "@/lib/store";
 
 const Auth = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Check if already logged in
+  useEffect(() => {
+    const user = getCurrentUser();
+    if (user) {
+      navigate("/");
+    }
+  }, [navigate]);
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState("");
@@ -23,39 +33,40 @@ const Auth = () => {
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
   const [registerConfirmPassword, setRegisterConfirmPassword] = useState("");
-  const [referralCode, setReferralCode] = useState("");
+  const [referralCode, setReferralCode] = useState(searchParams.get("ref") || "");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Demo login - simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    if (loginEmail && loginPassword) {
-      // Store demo user in localStorage
-      localStorage.setItem(
-        "demoUser",
-        JSON.stringify({
-          email: loginEmail,
-          name: loginEmail.split("@")[0],
-          vipLevel: 1,
-          balance: 500000,
-        })
-      );
+    const user = loginUser(loginEmail, loginPassword);
 
+    if (user) {
       toast({
         title: "Login Berhasil!",
         description: "Selamat datang kembali di InvestPro",
       });
-
       navigate("/");
     } else {
-      toast({
-        title: "Login Gagal",
-        description: "Email atau password salah",
-        variant: "destructive",
-      });
+      // Try to check if user exists
+      const allUsers = getAllUsers();
+      const exists = allUsers.find(u => u.email === loginEmail);
+      
+      if (!exists) {
+        toast({
+          title: "Akun Tidak Ditemukan",
+          description: "Silakan daftar terlebih dahulu",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Login Gagal",
+          description: "Email atau password salah",
+          variant: "destructive",
+        });
+      }
     }
 
     setIsLoading(false);
@@ -65,7 +76,6 @@ const Auth = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Demo validation
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     if (registerPassword !== registerConfirmPassword) {
@@ -78,22 +88,36 @@ const Auth = () => {
       return;
     }
 
+    if (registerPassword.length < 6) {
+      toast({
+        title: "Registrasi Gagal",
+        description: "Password minimal 6 karakter",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    // Check if email already exists
+    const allUsers = getAllUsers();
+    if (allUsers.find(u => u.email === registerEmail)) {
+      toast({
+        title: "Registrasi Gagal",
+        description: "Email sudah terdaftar",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
+    }
+
     if (registerName && registerEmail && registerPassword) {
-      // Store demo user in localStorage
-      localStorage.setItem(
-        "demoUser",
-        JSON.stringify({
-          email: registerEmail,
-          name: registerName,
-          vipLevel: 1,
-          balance: 0,
-          referralCode: referralCode || null,
-        })
-      );
+      const user = registerUser(registerName, registerEmail, registerPassword, referralCode || undefined);
 
       toast({
         title: "Registrasi Berhasil!",
-        description: "Akun Anda telah dibuat. Selamat berinvestasi!",
+        description: user.isAdmin 
+          ? "Akun Admin telah dibuat. Selamat berinvestasi!" 
+          : "Akun Anda telah dibuat. Selamat berinvestasi!",
       });
 
       navigate("/");
@@ -243,15 +267,6 @@ const Auth = () => {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-end">
-                      <button
-                        type="button"
-                        className="text-sm text-primary hover:underline"
-                      >
-                        Lupa password?
-                      </button>
-                    </div>
-
                     <Button
                       type="submit"
                       className="w-full"
@@ -296,11 +311,11 @@ const Auth = () => {
                         <Input
                           id="register-password"
                           type={showPassword ? "text" : "password"}
-                          placeholder="Minimal 8 karakter"
+                          placeholder="Minimal 6 karakter"
                           value={registerPassword}
                           onChange={(e) => setRegisterPassword(e.target.value)}
                           required
-                          minLength={8}
+                          minLength={6}
                         />
                         <button
                           type="button"
@@ -361,7 +376,7 @@ const Auth = () => {
               {/* Demo notice */}
               <div className="mt-6 p-3 rounded-lg bg-muted/50 border border-border/50">
                 <p className="text-xs text-muted-foreground text-center">
-                  🎮 <strong>Mode Demo</strong> - Data disimpan di browser Anda
+                  🎮 <strong>Mode Demo</strong> - Data disimpan di browser. User pertama otomatis jadi Admin.
                 </p>
               </div>
             </CardContent>
