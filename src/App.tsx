@@ -9,6 +9,8 @@ import Home from "./pages/Home";
 import Product from "./pages/Product";
 import Team from "./pages/Team";
 import Account from "./pages/Account";
+import Statistics from "./pages/Statistics";
+import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -52,6 +54,22 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Layout><Account /></Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/statistics"
+            element={
+              <ProtectedRoute>
+                <Layout><Statistics /></Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Layout><Profile /></Layout>
               </ProtectedRoute>
             }
           />

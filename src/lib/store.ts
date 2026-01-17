@@ -4,6 +4,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  phone: string;
   vipLevel: number;
   balance: number;
   referralCode: string;
@@ -52,6 +53,18 @@ export interface TeamMember {
   joinedAt: string;
 }
 
+// Commission rates based on VIP level
+export const getCommissionRate = (vipLevel: number): number => {
+  const rates: Record<number, number> = {
+    1: 0.01,  // 1%
+    2: 0.03,  // 3%
+    3: 0.05,  // 5%
+    4: 0.08,  // 8%
+    5: 0.10,  // 10%
+  };
+  return rates[vipLevel] || 0.01;
+};
+
 // Generate unique referral code
 export const generateReferralCode = (): string => {
   return 'REF' + Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -84,6 +97,69 @@ export const saveAllUsers = (users: User[]): void => {
   localStorage.setItem('allUsers', JSON.stringify(users));
 };
 
+// Update user by ID (for admin and commission)
+export const updateUserById = (userId: string, updates: Partial<User>): void => {
+  const allUsers = getAllUsers();
+  const idx = allUsers.findIndex(u => u.id === userId);
+  if (idx !== -1) {
+    allUsers[idx] = { ...allUsers[idx], ...updates };
+    saveAllUsers(allUsers);
+    
+    const currentUser = getCurrentUser();
+    if (currentUser && currentUser.id === userId) {
+      saveUser(allUsers[idx]);
+    }
+  }
+};
+
+// Add commission to referrer when downline invests
+export const processReferralCommission = (investorId: string, investAmount: number): void => {
+  const allUsers = getAllUsers();
+  const investor = allUsers.find(u => u.id === investorId);
+  
+  if (!investor || !investor.referredBy) return;
+  
+  const referrer = allUsers.find(u => u.referralCode === investor.referredBy);
+  if (!referrer) return;
+  
+  const commissionRate = getCommissionRate(referrer.vipLevel);
+  const commission = Math.floor(investAmount * commissionRate);
+  
+  // Update referrer balance and stats
+  const referrerIdx = allUsers.findIndex(u => u.id === referrer.id);
+  allUsers[referrerIdx].balance += commission;
+  allUsers[referrerIdx].teamIncome += commission;
+  allUsers[referrerIdx].totalIncome += commission;
+  saveAllUsers(allUsers);
+  
+  // Add commission transaction for referrer
+  const transactions = getTransactions(referrer.id);
+  transactions.unshift({
+    id: generateId(),
+    userId: referrer.id,
+    type: 'commission',
+    amount: commission,
+    status: 'success',
+    date: new Date().toISOString(),
+    description: `Komisi ${(commissionRate * 100).toFixed(0)}% dari investasi ${investor.name}`,
+  });
+  saveTransactions(referrer.id, transactions);
+  
+  // Update team member earnings
+  const teamMembers = getTeamMembers(referrer.id);
+  const memberIdx = teamMembers.findIndex(m => m.id === investorId);
+  if (memberIdx !== -1) {
+    teamMembers[memberIdx].totalEarnings += commission;
+    saveTeamMembers(referrer.id, teamMembers);
+  }
+  
+  // Update current user if they are the referrer
+  const currentUser = getCurrentUser();
+  if (currentUser && currentUser.id === referrer.id) {
+    saveUser(allUsers[referrerIdx]);
+  }
+};
+
 // Register new user
 export const registerUser = (name: string, email: string, password: string, referredBy?: string): User => {
   const allUsers = getAllUsers();
@@ -92,6 +168,7 @@ export const registerUser = (name: string, email: string, password: string, refe
     id: generateId(),
     email,
     name,
+    phone: '',
     vipLevel: 1,
     balance: 0,
     referralCode: generateReferralCode(),
@@ -189,6 +266,9 @@ export const addInvestment = (investment: Omit<Investment, 'id' | 'createdAt'>):
   const investments = getInvestments(user.id);
   investments.push(newInvestment);
   saveInvestments(user.id, investments);
+
+  // Process referral commission
+  processReferralCommission(user.id, investment.amount);
 
   return newInvestment;
 };
@@ -317,6 +397,52 @@ export const updateTransactionStatus = (userId: string, transactionId: string, s
       }
     }
   }
+};
+
+// Get income statistics for charts
+export const getIncomeStats = (userId: string): { date: string; income: number; commission: number }[] => {
+  const transactions = getTransactions(userId);
+  const stats: Record<string, { income: number; commission: number }> = {};
+  
+  // Get last 7 days
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    const dateStr = date.toISOString().split('T')[0];
+    stats[dateStr] = { income: 0, commission: 0 };
+  }
+  
+  transactions.forEach(tx => {
+    if (tx.status !== 'success') return;
+    const dateStr = tx.date.split('T')[0];
+    if (stats[dateStr]) {
+      if (tx.type === 'income') {
+        stats[dateStr].income += tx.amount;
+      } else if (tx.type === 'commission') {
+        stats[dateStr].commission += tx.amount;
+      }
+    }
+  });
+  
+  return Object.entries(stats).map(([date, data]) => ({
+    date: new Date(date).toLocaleDateString('id-ID', { weekday: 'short' }),
+    ...data,
+  }));
+};
+
+// Get investment distribution for charts
+export const getInvestmentDistribution = (userId: string): { name: string; value: number }[] => {
+  const investments = getInvestments(userId);
+  const distribution: Record<string, number> = {};
+  
+  investments.forEach(inv => {
+    if (!distribution[inv.productName]) {
+      distribution[inv.productName] = 0;
+    }
+    distribution[inv.productName] += inv.amount;
+  });
+  
+  return Object.entries(distribution).map(([name, value]) => ({ name, value }));
 };
 
 // Get all products
