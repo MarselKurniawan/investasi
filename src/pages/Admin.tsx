@@ -2,7 +2,17 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import {
   getAllUsers,
@@ -11,6 +21,8 @@ import {
   formatCurrency,
   User,
   saveAllUsers,
+  getTransactions,
+  getInvestments,
 } from "@/lib/store";
 import {
   Users,
@@ -21,7 +33,13 @@ import {
   ShieldCheck,
   TrendingUp,
   Wallet,
-  Crown,
+  Trash2,
+  Edit,
+  Plus,
+  Minus,
+  UserCog,
+  History,
+  Package,
 } from "lucide-react";
 
 const Admin = () => {
@@ -31,6 +49,23 @@ const Admin = () => {
     (ReturnType<typeof getAllPendingTransactions>[0])[]
   >([]);
   const [isLoading, setIsLoading] = useState<string | null>(null);
+
+  // Edit user dialog
+  const [editUserOpen, setEditUserOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+
+  // Add balance dialog
+  const [balanceDialogOpen, setBalanceDialogOpen] = useState(false);
+  const [balanceAmount, setBalanceAmount] = useState("");
+  const [balanceAction, setBalanceAction] = useState<"add" | "subtract">("add");
+
+  // User detail dialog
+  const [detailUserOpen, setDetailUserOpen] = useState(false);
+  const [userTransactions, setUserTransactions] = useState<any[]>([]);
+  const [userInvestments, setUserInvestments] = useState<any[]>([]);
 
   const loadData = () => {
     setUsers(getAllUsers());
@@ -80,18 +115,108 @@ const Admin = () => {
     }
   };
 
-  const handleAddBalance = (userId: string, amount: number) => {
+  const handleToggleAdmin = (userId: string) => {
     const allUsers = getAllUsers();
     const idx = allUsers.findIndex((u) => u.id === userId);
     if (idx !== -1) {
-      allUsers[idx].balance += amount;
+      allUsers[idx].isAdmin = !allUsers[idx].isAdmin;
+      saveAllUsers(allUsers);
+      loadData();
+      toast({
+        title: allUsers[idx].isAdmin ? "Admin Ditambahkan" : "Admin Dihapus",
+        description: `${allUsers[idx].name} ${allUsers[idx].isAdmin ? "sekarang admin" : "bukan admin lagi"}`,
+      });
+    }
+  };
+
+  const handleDeleteUser = (userId: string) => {
+    const allUsers = getAllUsers();
+    const user = allUsers.find((u) => u.id === userId);
+    if (user?.isAdmin) {
+      toast({
+        title: "Tidak Bisa Hapus",
+        description: "Tidak bisa menghapus akun admin",
+        variant: "destructive",
+      });
+      return;
+    }
+    const filtered = allUsers.filter((u) => u.id !== userId);
+    saveAllUsers(filtered);
+    loadData();
+    toast({
+      title: "User Dihapus",
+      description: "User berhasil dihapus dari sistem",
+    });
+  };
+
+  const openEditUser = (user: User) => {
+    setSelectedUser(user);
+    setEditName(user.name);
+    setEditEmail(user.email);
+    setEditPhone(user.phone || "");
+    setEditUserOpen(true);
+  };
+
+  const handleSaveUser = () => {
+    if (!selectedUser) return;
+    const allUsers = getAllUsers();
+    const idx = allUsers.findIndex((u) => u.id === selectedUser.id);
+    if (idx !== -1) {
+      allUsers[idx].name = editName;
+      allUsers[idx].email = editEmail;
+      allUsers[idx].phone = editPhone;
+      saveAllUsers(allUsers);
+      loadData();
+      toast({
+        title: "User Updated",
+        description: "Data user berhasil diperbarui",
+      });
+    }
+    setEditUserOpen(false);
+  };
+
+  const openBalanceDialog = (user: User, action: "add" | "subtract") => {
+    setSelectedUser(user);
+    setBalanceAction(action);
+    setBalanceAmount("");
+    setBalanceDialogOpen(true);
+  };
+
+  const handleUpdateBalance = () => {
+    if (!selectedUser || !balanceAmount) return;
+    const amount = parseInt(balanceAmount);
+    if (isNaN(amount) || amount <= 0) {
+      toast({
+        title: "Error",
+        description: "Masukkan jumlah yang valid",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const allUsers = getAllUsers();
+    const idx = allUsers.findIndex((u) => u.id === selectedUser.id);
+    if (idx !== -1) {
+      if (balanceAction === "add") {
+        allUsers[idx].balance += amount;
+      } else {
+        allUsers[idx].balance = Math.max(0, allUsers[idx].balance - amount);
+      }
       saveAllUsers(allUsers);
       loadData();
       toast({
         title: "Balance Updated",
-        description: `Ditambahkan ${formatCurrency(amount)}`,
+        description: `${balanceAction === "add" ? "Ditambahkan" : "Dikurangi"} ${formatCurrency(amount)}`,
       });
     }
+    setBalanceDialogOpen(false);
+  };
+
+  const openUserDetail = (user: User) => {
+    setSelectedUser(user);
+    setUserTransactions(getTransactions(user.id));
+    setUserInvestments(getInvestments(user.id));
+    setDetailUserOpen(true);
   };
 
   const stats = {
@@ -99,6 +224,8 @@ const Admin = () => {
     totalBalance: users.reduce((sum, u) => sum + u.balance, 0),
     pendingCount: pendingTransactions.length,
     totalInvest: users.reduce((sum, u) => sum + u.totalInvest, 0),
+    totalRecharge: users.reduce((sum, u) => sum + u.totalRecharge, 0),
+    totalWithdraw: users.reduce((sum, u) => sum + u.totalWithdraw, 0),
   };
 
   return (
@@ -115,7 +242,7 @@ const Admin = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         <Card className="shadow-card">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
@@ -134,15 +261,6 @@ const Admin = () => {
             <p className="text-lg font-bold">{formatCurrency(stats.totalBalance)}</p>
           </CardContent>
         </Card>
-        <Card className="shadow-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="w-4 h-4 text-accent" />
-              <p className="text-xs text-muted-foreground">Total Invest</p>
-            </div>
-            <p className="text-lg font-bold">{formatCurrency(stats.totalInvest)}</p>
-          </CardContent>
-        </Card>
         <Card className="shadow-card bg-accent/10">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
@@ -152,16 +270,43 @@ const Admin = () => {
             <p className="text-2xl font-bold text-accent">{stats.pendingCount}</p>
           </CardContent>
         </Card>
+        <Card className="shadow-card">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp className="w-4 h-4 text-primary" />
+              <p className="text-xs text-muted-foreground">Total Invest</p>
+            </div>
+            <p className="text-sm font-bold">{formatCurrency(stats.totalInvest)}</p>
+          </CardContent>
+        </Card>
+        <Card className="shadow-card">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <ArrowUpRight className="w-4 h-4 text-success" />
+              <p className="text-xs text-muted-foreground">Total Recharge</p>
+            </div>
+            <p className="text-sm font-bold">{formatCurrency(stats.totalRecharge)}</p>
+          </CardContent>
+        </Card>
+        <Card className="shadow-card">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <ArrowDownRight className="w-4 h-4 text-destructive" />
+              <p className="text-xs text-muted-foreground">Total Withdraw</p>
+            </div>
+            <p className="text-sm font-bold">{formatCurrency(stats.totalWithdraw)}</p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Tabs */}
       <Tabs defaultValue="pending" className="w-full">
         <TabsList className="w-full grid grid-cols-2">
           <TabsTrigger value="pending" className="text-sm">
-            Transaksi Pending ({pendingTransactions.length})
+            Pending ({pendingTransactions.length})
           </TabsTrigger>
           <TabsTrigger value="users" className="text-sm">
-            Daftar User ({users.length})
+            Users ({users.length})
           </TabsTrigger>
         </TabsList>
 
@@ -223,9 +368,9 @@ const Admin = () => {
 
                   <div className="flex gap-2">
                     <Button
-                      variant="success"
+                      variant="default"
                       size="sm"
-                      className="flex-1"
+                      className="flex-1 bg-success hover:bg-success/90"
                       onClick={() => handleApprove(tx.userId, tx.id)}
                       disabled={isLoading === tx.id}
                     >
@@ -255,14 +400,17 @@ const Admin = () => {
             <Card key={user.id} className="shadow-card">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <div className="flex items-center gap-2">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-semibold text-foreground">{user.name}</p>
                       {user.isAdmin && (
-                        <Badge variant="vip" className="text-xs">
+                        <Badge variant="default" className="text-xs bg-primary">
                           Admin
                         </Badge>
                       )}
+                      <Badge variant="outline" className="text-xs">
+                        VIP {user.vipLevel}
+                      </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground">{user.email}</p>
                     <p className="text-xs text-muted-foreground mt-1">
@@ -270,10 +418,10 @@ const Admin = () => {
                     </p>
                   </div>
                   <div className="text-right">
-                    <Badge variant="vip">VIP {user.vipLevel}</Badge>
-                    <p className="text-lg font-bold text-foreground mt-1">
+                    <p className="text-lg font-bold text-foreground">
                       {formatCurrency(user.balance)}
                     </p>
+                    <p className="text-xs text-muted-foreground">Saldo</p>
                   </div>
                 </div>
 
@@ -292,7 +440,8 @@ const Admin = () => {
                   </div>
                 </div>
 
-                <div className="flex gap-2">
+                {/* Action Buttons Row 1: VIP & Balance */}
+                <div className="flex gap-2 mb-2">
                   <select
                     className="flex-1 px-3 py-2 text-sm rounded-md bg-muted border border-border"
                     value={user.vipLevel}
@@ -307,16 +456,53 @@ const Admin = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleAddBalance(user.id, 500000)}
+                    onClick={() => openBalanceDialog(user, "add")}
                   >
-                    +500rb
+                    <Plus className="w-4 h-4" />
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleAddBalance(user.id, 1000000)}
+                    onClick={() => openBalanceDialog(user, "subtract")}
                   >
-                    +1jt
+                    <Minus className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                {/* Action Buttons Row 2: Edit, Detail, Admin, Delete */}
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => openEditUser(user)}
+                  >
+                    <Edit className="w-4 h-4 mr-1" />
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => openUserDetail(user)}
+                  >
+                    <History className="w-4 h-4 mr-1" />
+                    Detail
+                  </Button>
+                  <Button
+                    variant={user.isAdmin ? "secondary" : "default"}
+                    size="sm"
+                    onClick={() => handleToggleAdmin(user.id)}
+                  >
+                    <UserCog className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => handleDeleteUser(user.id)}
+                    disabled={user.isAdmin}
+                  >
+                    <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
               </CardContent>
@@ -324,6 +510,194 @@ const Admin = () => {
           ))}
         </TabsContent>
       </Tabs>
+
+      {/* Edit User Dialog */}
+      <Dialog open={editUserOpen} onOpenChange={setEditUserOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription>Ubah data user</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Nama</Label>
+              <Input
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input
+                type="email"
+                value={editEmail}
+                onChange={(e) => setEditEmail(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Telepon</Label>
+              <Input
+                type="tel"
+                value={editPhone}
+                onChange={(e) => setEditPhone(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditUserOpen(false)}>
+              Batal
+            </Button>
+            <Button onClick={handleSaveUser}>Simpan</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Balance Dialog */}
+      <Dialog open={balanceDialogOpen} onOpenChange={setBalanceDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {balanceAction === "add" ? "Tambah" : "Kurangi"} Saldo
+            </DialogTitle>
+            <DialogDescription>
+              {selectedUser?.name} - Saldo: {formatCurrency(selectedUser?.balance || 0)}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Jumlah</Label>
+              <Input
+                type="number"
+                placeholder="Masukkan jumlah"
+                value={balanceAmount}
+                onChange={(e) => setBalanceAmount(e.target.value)}
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {[100000, 500000, 1000000].map((amt) => (
+                <Button
+                  key={amt}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setBalanceAmount(amt.toString())}
+                >
+                  {formatCurrency(amt)}
+                </Button>
+              ))}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBalanceDialogOpen(false)}>
+              Batal
+            </Button>
+            <Button
+              onClick={handleUpdateBalance}
+              variant={balanceAction === "add" ? "default" : "destructive"}
+            >
+              {balanceAction === "add" ? "Tambah" : "Kurangi"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* User Detail Dialog */}
+      <Dialog open={detailUserOpen} onOpenChange={setDetailUserOpen}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Detail User: {selectedUser?.name}</DialogTitle>
+            <DialogDescription>{selectedUser?.email}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {/* User Info */}
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="bg-muted p-3 rounded-lg">
+                <p className="text-muted-foreground text-xs">VIP Level</p>
+                <p className="font-bold">VIP {selectedUser?.vipLevel}</p>
+              </div>
+              <div className="bg-muted p-3 rounded-lg">
+                <p className="text-muted-foreground text-xs">Saldo</p>
+                <p className="font-bold">{formatCurrency(selectedUser?.balance || 0)}</p>
+              </div>
+              <div className="bg-muted p-3 rounded-lg">
+                <p className="text-muted-foreground text-xs">Referral Code</p>
+                <p className="font-bold">{selectedUser?.referralCode}</p>
+              </div>
+              <div className="bg-muted p-3 rounded-lg">
+                <p className="text-muted-foreground text-xs">Referred By</p>
+                <p className="font-bold">{selectedUser?.referredBy || "-"}</p>
+              </div>
+            </div>
+
+            {/* Investments */}
+            <div>
+              <h4 className="font-semibold mb-2 flex items-center gap-2">
+                <Package className="w-4 h-4" />
+                Investasi ({userInvestments.length})
+              </h4>
+              {userInvestments.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Belum ada investasi</p>
+              ) : (
+                <div className="space-y-2 max-h-32 overflow-y-auto">
+                  {userInvestments.map((inv: any) => (
+                    <div key={inv.id} className="bg-muted p-2 rounded text-sm">
+                      <div className="flex justify-between">
+                        <span>{inv.productName}</span>
+                        <Badge variant={inv.status === "active" ? "default" : "secondary"}>
+                          {inv.status}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {formatCurrency(inv.amount)} • {inv.daysRemaining} hari tersisa
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Transactions */}
+            <div>
+              <h4 className="font-semibold mb-2 flex items-center gap-2">
+                <History className="w-4 h-4" />
+                Transaksi ({userTransactions.length})
+              </h4>
+              {userTransactions.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Belum ada transaksi</p>
+              ) : (
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {userTransactions.slice(0, 10).map((tx: any) => (
+                    <div key={tx.id} className="bg-muted p-2 rounded text-sm flex justify-between items-center">
+                      <div>
+                        <span className="capitalize">{tx.type}</span>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(tx.date).toLocaleDateString("id-ID")}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className={`font-bold ${tx.amount > 0 ? "text-success" : ""}`}>
+                          {tx.amount > 0 ? "+" : ""}{formatCurrency(Math.abs(tx.amount))}
+                        </p>
+                        <Badge
+                          variant={
+                            tx.status === "success"
+                              ? "default"
+                              : tx.status === "pending"
+                              ? "outline"
+                              : "destructive"
+                          }
+                          className="text-xs"
+                        >
+                          {tx.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
