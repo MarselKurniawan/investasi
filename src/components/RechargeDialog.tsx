@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { addTransaction, formatCurrency } from "@/lib/store";
-import { ArrowUpRight, CreditCard, Wallet, Building2 } from "lucide-react";
+import { addTransaction, updateUser, getCurrentUser, formatCurrency } from "@/lib/store";
+import { ArrowUpRight, CreditCard, Wallet, Building2, CheckCircle } from "lucide-react";
 
 interface RechargeDialogProps {
   open: boolean;
@@ -50,17 +50,27 @@ const RechargeDialog = ({ open, onOpenChange, onSuccess }: RechargeDialogProps) 
     setIsLoading(true);
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
+    // Auto approve: Update balance immediately
+    const user = getCurrentUser();
+    if (user) {
+      updateUser({ 
+        balance: user.balance + amountNum,
+        totalRecharge: user.totalRecharge + amountNum 
+      });
+    }
+
+    // Add transaction with success status
     addTransaction({
       userId: "",
       type: "recharge",
       amount: amountNum,
-      status: "pending",
+      status: "success",
       description: `Recharge via ${method}`,
     });
 
     toast({
-      title: "Recharge Diajukan!",
-      description: `Permintaan recharge ${formatCurrency(amountNum)} sedang diproses.`,
+      title: "Recharge Berhasil!",
+      description: `Saldo ${formatCurrency(amountNum)} telah ditambahkan.`,
     });
 
     setIsLoading(false);
