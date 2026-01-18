@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { addTransaction, updateUser, getCurrentUser, formatCurrency } from "@/lib/store";
-import { ArrowDownRight, Building2, AlertCircle } from "lucide-react";
+import { ArrowDownRight, Building2, CheckCircle } from "lucide-react";
 
 interface WithdrawDialogProps {
   open: boolean;
@@ -54,23 +54,27 @@ const WithdrawDialog = ({ open, onOpenChange, balance, onSuccess }: WithdrawDial
     setIsLoading(true);
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    // Deduct balance immediately
+    // Auto approve: Deduct balance and update totalWithdraw immediately
     const user = getCurrentUser();
     if (user) {
-      updateUser({ balance: user.balance - amountNum });
+      updateUser({ 
+        balance: user.balance - amountNum,
+        totalWithdraw: user.totalWithdraw + amountNum 
+      });
     }
 
+    // Add transaction with success status
     addTransaction({
       userId: "",
       type: "withdraw",
       amount: amountNum,
-      status: "pending",
-      description: `Withdraw ke ${bankName} - ${accountNumber}`,
+      status: "success",
+      description: `Withdraw ke ${bankName} - ${accountNumber} (${accountName})`,
     });
 
     toast({
-      title: "Withdraw Diajukan!",
-      description: `Permintaan withdraw ${formatCurrency(amountNum)} sedang diproses.`,
+      title: "Withdraw Berhasil!",
+      description: `${formatCurrency(amountNum)} telah ditransfer ke rekening Anda.`,
     });
 
     setIsLoading(false);
@@ -159,11 +163,11 @@ const WithdrawDialog = ({ open, onOpenChange, balance, onSuccess }: WithdrawDial
             </div>
           </div>
 
-          {/* Warning */}
-          <div className="flex items-start gap-2 p-3 bg-accent/10 rounded-lg">
-            <AlertCircle className="w-4 h-4 text-accent mt-0.5" />
+          {/* Info */}
+          <div className="flex items-start gap-2 p-3 bg-success/10 rounded-lg">
+            <CheckCircle className="w-4 h-4 text-success mt-0.5" />
             <p className="text-xs text-muted-foreground">
-              Proses withdraw membutuhkan waktu 1-24 jam kerja. Pastikan data rekening sudah benar.
+              Withdraw diproses otomatis. Pastikan data rekening sudah benar.
             </p>
           </div>
 
