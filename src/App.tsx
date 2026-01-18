@@ -12,6 +12,7 @@ import Account from "./pages/Account";
 import Statistics from "./pages/Statistics";
 import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
+import AdminUsers from "./pages/AdminUsers";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -78,6 +79,14 @@ const App = () => (
             element={
               <ProtectedRoute adminOnly>
                 <Layout><Admin /></Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <ProtectedRoute adminOnly>
+                <Layout><AdminUsers /></Layout>
               </ProtectedRoute>
             }
           />

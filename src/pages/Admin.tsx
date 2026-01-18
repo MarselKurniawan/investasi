@@ -41,6 +41,7 @@ import {
   History,
   Package,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Admin = () => {
   const { toast } = useToast();
@@ -239,6 +240,12 @@ const Admin = () => {
           </div>
           <p className="text-sm text-muted-foreground mt-1">Kelola pengguna dan transaksi</p>
         </div>
+        <Link to="/admin/users">
+          <Button variant="default" size="sm">
+            <UserCog className="w-4 h-4 mr-2" />
+            Manage Users
+          </Button>
+        </Link>
       </div>
 
       {/* Stats */}
