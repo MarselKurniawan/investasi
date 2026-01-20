@@ -53,6 +53,18 @@ export interface TeamMember {
   joinedAt: string;
 }
 
+export interface Product {
+  id: number;
+  name: string;
+  price: number;
+  dailyIncome: number;
+  validity: number;
+  totalIncome: number;
+  vipLevel: number;
+  image: string;
+  description: string;
+}
+
 // Commission rates based on VIP level
 export const getCommissionRate = (vipLevel: number): number => {
   const rates: Record<number, number> = {
@@ -445,18 +457,118 @@ export const getInvestmentDistribution = (userId: string): { name: string; value
   return Object.entries(distribution).map(([name, value]) => ({ name, value }));
 };
 
-// Get all products
-export const getAllProducts = () => [
-  { id: 1, name: "Paket Investasi Starter", price: 150000, dailyIncome: 15000, validity: 20, totalIncome: 300000, vipLevel: 1 },
-  { id: 2, name: "Paket Investasi Basic", price: 300000, dailyIncome: 33000, validity: 20, totalIncome: 660000, vipLevel: 1 },
-  { id: 3, name: "Paket Investasi Pro", price: 500000, dailyIncome: 55000, validity: 20, totalIncome: 1100000, vipLevel: 1 },
-  { id: 4, name: "Paket Premium A", price: 1000000, dailyIncome: 115000, validity: 20, totalIncome: 2300000, vipLevel: 2 },
-  { id: 5, name: "Paket Premium B", price: 2000000, dailyIncome: 240000, validity: 20, totalIncome: 4800000, vipLevel: 2 },
-  { id: 6, name: "Paket Elite Gold", price: 5000000, dailyIncome: 625000, validity: 20, totalIncome: 12500000, vipLevel: 3 },
-  { id: 7, name: "Paket Elite Platinum", price: 10000000, dailyIncome: 1300000, validity: 20, totalIncome: 26000000, vipLevel: 3 },
-  { id: 8, name: "Paket Diamond", price: 25000000, dailyIncome: 3500000, validity: 20, totalIncome: 70000000, vipLevel: 4 },
-  { id: 9, name: "Paket Diamond Plus", price: 50000000, dailyIncome: 7500000, validity: 20, totalIncome: 150000000, vipLevel: 4 },
-  { id: 10, name: "Paket Ultimate", price: 100000000, dailyIncome: 16000000, validity: 20, totalIncome: 320000000, vipLevel: 5 },
+// Get all products with images
+export const getAllProducts = (): Product[] => [
+  { 
+    id: 1, 
+    name: "Paket Investasi Starter", 
+    price: 150000, 
+    dailyIncome: 15000, 
+    validity: 20, 
+    totalIncome: 300000, 
+    vipLevel: 1,
+    image: "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=400&h=300&fit=crop",
+    description: "Cocok untuk pemula yang ingin memulai investasi"
+  },
+  { 
+    id: 2, 
+    name: "Paket Investasi Basic", 
+    price: 300000, 
+    dailyIncome: 33000, 
+    validity: 20, 
+    totalIncome: 660000, 
+    vipLevel: 1,
+    image: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400&h=300&fit=crop",
+    description: "Investasi dasar dengan return yang menarik"
+  },
+  { 
+    id: 3, 
+    name: "Paket Investasi Pro", 
+    price: 500000, 
+    dailyIncome: 55000, 
+    validity: 20, 
+    totalIncome: 1100000, 
+    vipLevel: 1,
+    image: "https://images.unsplash.com/photo-1642790106117-e829e14a795f?w=400&h=300&fit=crop",
+    description: "Untuk investor yang siap naik level"
+  },
+  { 
+    id: 4, 
+    name: "Paket Premium A", 
+    price: 1000000, 
+    dailyIncome: 115000, 
+    validity: 20, 
+    totalIncome: 2300000, 
+    vipLevel: 2,
+    image: "https://images.unsplash.com/photo-1518546305927-5a555bb7020d?w=400&h=300&fit=crop",
+    description: "Paket premium dengan keuntungan maksimal"
+  },
+  { 
+    id: 5, 
+    name: "Paket Premium B", 
+    price: 2000000, 
+    dailyIncome: 240000, 
+    validity: 20, 
+    totalIncome: 4800000, 
+    vipLevel: 2,
+    image: "https://images.unsplash.com/photo-1621761191319-c6fb62004040?w=400&h=300&fit=crop",
+    description: "Double keuntungan untuk member premium"
+  },
+  { 
+    id: 6, 
+    name: "Paket Elite Gold", 
+    price: 5000000, 
+    dailyIncome: 625000, 
+    validity: 20, 
+    totalIncome: 12500000, 
+    vipLevel: 3,
+    image: "https://images.unsplash.com/photo-1610375461246-83df859d849d?w=400&h=300&fit=crop",
+    description: "Eksklusif untuk member elite"
+  },
+  { 
+    id: 7, 
+    name: "Paket Elite Platinum", 
+    price: 10000000, 
+    dailyIncome: 1300000, 
+    validity: 20, 
+    totalIncome: 26000000, 
+    vipLevel: 3,
+    image: "https://images.unsplash.com/photo-1624365168968-f283d506c6b6?w=400&h=300&fit=crop",
+    description: "Platinum grade investment package"
+  },
+  { 
+    id: 8, 
+    name: "Paket Diamond", 
+    price: 25000000, 
+    dailyIncome: 3500000, 
+    validity: 20, 
+    totalIncome: 70000000, 
+    vipLevel: 4,
+    image: "https://images.unsplash.com/photo-1515606378517-3451a4fa2e12?w=400&h=300&fit=crop",
+    description: "Diamond tier dengan return fantastis"
+  },
+  { 
+    id: 9, 
+    name: "Paket Diamond Plus", 
+    price: 50000000, 
+    dailyIncome: 7500000, 
+    validity: 20, 
+    totalIncome: 150000000, 
+    vipLevel: 4,
+    image: "https://images.unsplash.com/photo-1639762681057-408e52192e55?w=400&h=300&fit=crop",
+    description: "Premium diamond untuk investor serius"
+  },
+  { 
+    id: 10, 
+    name: "Paket Ultimate", 
+    price: 100000000, 
+    dailyIncome: 16000000, 
+    validity: 20, 
+    totalIncome: 320000000, 
+    vipLevel: 5,
+    image: "https://images.unsplash.com/photo-1620321023374-d1a68fbc720d?w=400&h=300&fit=crop",
+    description: "Ultimate package dengan return maksimal"
+  },
 ];
 
 // Format currency

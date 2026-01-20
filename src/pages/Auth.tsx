@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff, TrendingUp, Shield, Users } from "lucide-react";
+import { Eye, EyeOff, TrendingUp, Shield, Users, Sparkles, Zap } from "lucide-react";
 import { registerUser, loginUser, getCurrentUser, getAllUsers } from "@/lib/store";
 
 const Auth = () => {
@@ -133,58 +133,68 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-background flex relative overflow-hidden">
+      {/* Background decorations */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-0 w-80 h-80 bg-accent/20 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-0 w-64 h-64 bg-vip-gold/10 rounded-full blur-3xl" />
+      </div>
+
       {/* Left side - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary via-primary/90 to-gold-500 p-12 flex-col justify-between relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary/20 via-card to-accent/20 p-12 flex-col justify-between relative">
         {/* Background decorations */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-80 h-80 bg-gold-400/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-vip-gold/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
 
         <div className="relative z-10">
-          <h1 className="font-display text-4xl font-bold text-white mb-2">
-            InvestPro
-          </h1>
-          <p className="text-white/80">Platform Investasi Terpercaya</p>
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles className="w-8 h-8 text-primary" />
+            <h1 className="font-heading text-4xl font-bold text-foreground">
+              InvestPro
+            </h1>
+          </div>
+          <p className="text-muted-foreground">Platform Investasi Terpercaya</p>
         </div>
 
         <div className="relative z-10 space-y-8">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-white" />
+            <div className="w-12 h-12 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center neon-pulse">
+              <TrendingUp className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h3 className="text-white font-semibold text-lg">
+              <h3 className="text-foreground font-semibold text-lg">
                 Return Tinggi
               </h3>
-              <p className="text-white/70 text-sm">
+              <p className="text-muted-foreground text-sm">
                 Dapatkan keuntungan hingga 10% per hari
               </p>
             </div>
           </div>
 
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
-              <Shield className="w-6 h-6 text-white" />
+            <div className="w-12 h-12 rounded-xl bg-success/20 border border-success/30 flex items-center justify-center">
+              <Shield className="w-6 h-6 text-success" />
             </div>
             <div>
-              <h3 className="text-white font-semibold text-lg">
+              <h3 className="text-foreground font-semibold text-lg">
                 Aman & Terpercaya
               </h3>
-              <p className="text-white/70 text-sm">
+              <p className="text-muted-foreground text-sm">
                 Dilindungi sistem keamanan berlapis
               </p>
             </div>
           </div>
 
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
-              <Users className="w-6 h-6 text-white" />
+            <div className="w-12 h-12 rounded-xl bg-vip-gold/20 border border-vip-gold/30 flex items-center justify-center gold-pulse">
+              <Users className="w-6 h-6 text-vip-gold" />
             </div>
             <div>
-              <h3 className="text-white font-semibold text-lg">
+              <h3 className="text-foreground font-semibold text-lg">
                 Bonus Referral
               </h3>
-              <p className="text-white/70 text-sm">
+              <p className="text-muted-foreground text-sm">
                 Ajak teman dan dapatkan komisi hingga 10%
               </p>
             </div>
@@ -192,28 +202,32 @@ const Auth = () => {
         </div>
 
         <div className="relative z-10">
-          <p className="text-white/60 text-sm">
+          <p className="text-muted-foreground text-sm">
             © 2024 InvestPro. All rights reserved.
           </p>
         </div>
       </div>
 
       {/* Right side - Auth Form */}
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
+      <div className="flex-1 flex items-center justify-center p-6 lg:p-12 relative z-10">
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="lg:hidden text-center mb-8">
-            <h1 className="font-display text-3xl font-bold text-primary mb-1">
-              InvestPro
-            </h1>
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <Sparkles className="w-7 h-7 text-primary" />
+              <h1 className="font-heading text-3xl font-bold text-foreground">
+                InvestPro
+              </h1>
+            </div>
             <p className="text-muted-foreground text-sm">
               Platform Investasi Terpercaya
             </p>
           </div>
 
-          <Card className="border-border/50 shadow-card">
+          <Card className="border-primary/20 shadow-glow">
             <CardHeader className="space-y-1 pb-4">
-              <CardTitle className="text-2xl font-display">
+              <CardTitle className="text-2xl font-heading flex items-center gap-2">
+                <Zap className="w-6 h-6 text-primary" />
                 Selamat Datang
               </CardTitle>
               <CardDescription>
@@ -222,7 +236,7 @@ const Auth = () => {
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="login" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsList className="grid w-full grid-cols-2 mb-6 bg-muted">
                   <TabsTrigger value="login">Masuk</TabsTrigger>
                   <TabsTrigger value="register">Daftar</TabsTrigger>
                 </TabsList>
@@ -239,6 +253,7 @@ const Auth = () => {
                         value={loginEmail}
                         onChange={(e) => setLoginEmail(e.target.value)}
                         required
+                        className="bg-muted/50"
                       />
                     </div>
 
@@ -252,6 +267,7 @@ const Auth = () => {
                           value={loginPassword}
                           onChange={(e) => setLoginPassword(e.target.value)}
                           required
+                          className="bg-muted/50"
                         />
                         <button
                           type="button"
@@ -269,7 +285,7 @@ const Auth = () => {
 
                     <Button
                       type="submit"
-                      className="w-full"
+                      className="w-full neon-pulse"
                       size="lg"
                       disabled={isLoading}
                     >
@@ -290,6 +306,7 @@ const Auth = () => {
                         value={registerName}
                         onChange={(e) => setRegisterName(e.target.value)}
                         required
+                        className="bg-muted/50"
                       />
                     </div>
 
@@ -302,6 +319,7 @@ const Auth = () => {
                         value={registerEmail}
                         onChange={(e) => setRegisterEmail(e.target.value)}
                         required
+                        className="bg-muted/50"
                       />
                     </div>
 
@@ -316,6 +334,7 @@ const Auth = () => {
                           onChange={(e) => setRegisterPassword(e.target.value)}
                           required
                           minLength={6}
+                          className="bg-muted/50"
                         />
                         <button
                           type="button"
@@ -344,6 +363,7 @@ const Auth = () => {
                           setRegisterConfirmPassword(e.target.value)
                         }
                         required
+                        className="bg-muted/50"
                       />
                     </div>
 
@@ -358,12 +378,13 @@ const Auth = () => {
                         placeholder="Masukkan kode referral"
                         value={referralCode}
                         onChange={(e) => setReferralCode(e.target.value)}
+                        className="bg-muted/50"
                       />
                     </div>
 
                     <Button
                       type="submit"
-                      className="w-full"
+                      className="w-full neon-pulse"
                       size="lg"
                       disabled={isLoading}
                     >
@@ -374,9 +395,9 @@ const Auth = () => {
               </Tabs>
 
               {/* Demo notice */}
-              <div className="mt-6 p-3 rounded-lg bg-muted/50 border border-border/50">
+              <div className="mt-6 p-3 rounded-lg bg-muted/50 border border-primary/20">
                 <p className="text-xs text-muted-foreground text-center">
-                  🎮 <strong>Mode Demo</strong> - Data disimpan di browser. User pertama otomatis jadi Admin.
+                  🎮 <strong className="text-primary">Mode Demo</strong> - Data disimpan di browser. User pertama otomatis jadi Admin.
                 </p>
               </div>
             </CardContent>

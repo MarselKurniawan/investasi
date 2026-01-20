@@ -28,6 +28,11 @@ import {
   Lock,
   Eye,
   EyeOff,
+  Sparkles,
+  BarChart3,
+  Users,
+  Wallet,
+  TrendingUp,
 } from "lucide-react";
 
 const Profile = () => {
@@ -124,28 +129,56 @@ const Profile = () => {
 
   const commissionRate = getCommissionRate(user.vipLevel);
 
+  const menuItems = [
+    {
+      icon: BarChart3,
+      label: "Lihat Statistik",
+      description: "Analisis performa investasi",
+      href: "/statistics",
+      color: "text-primary",
+    },
+    {
+      icon: Users,
+      label: "Tim & Referral",
+      description: "Kelola tim dan lihat komisi",
+      href: "/team",
+      color: "text-success",
+    },
+    {
+      icon: Wallet,
+      label: "Riwayat Transaksi",
+      description: "Lihat semua transaksi Anda",
+      href: "/account",
+      color: "text-accent",
+    },
+  ];
+
   return (
     <div className="space-y-6 p-4 pt-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-heading font-bold text-foreground mb-1">Pengaturan Profil</h1>
+        <h1 className="text-2xl font-heading font-bold text-foreground mb-1 flex items-center gap-2">
+          <Sparkles className="w-6 h-6 text-primary" />
+          Pengaturan Profil
+        </h1>
         <p className="text-sm text-muted-foreground">Kelola data akun Anda</p>
       </div>
 
       {/* Profile Card */}
-      <Card className="shadow-elegant border-2 border-primary/20">
-        <CardContent className="p-6">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-16 h-16 rounded-full bg-gradient-primary flex items-center justify-center">
-              <UserIcon className="w-8 h-8 text-primary-foreground" />
+      <Card className="shadow-glow border-2 border-primary/30 overflow-hidden">
+        <div className="h-20 bg-gradient-to-r from-primary/30 via-accent/20 to-vip-gold/30" />
+        <CardContent className="p-6 -mt-10 relative">
+          <div className="flex items-end gap-4 mb-6">
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center border-4 border-card shadow-glow">
+              <UserIcon className="w-10 h-10 text-foreground" />
             </div>
-            <div className="flex-1">
+            <div className="flex-1 pb-2">
               <h2 className="text-xl font-bold text-foreground">{user.name}</h2>
               <p className="text-sm text-muted-foreground">{user.email}</p>
               <div className="flex items-center gap-2 mt-1">
-                <Badge variant="vip">VIP {user.vipLevel}</Badge>
+                <Badge variant="vip" className="gold-pulse">VIP {user.vipLevel}</Badge>
                 {user.isAdmin && (
-                  <Badge variant="outline" className="text-primary">
+                  <Badge variant="outline" className="border-primary/50 text-primary">
                     <Shield className="w-3 h-3 mr-1" />
                     Admin
                   </Badge>
@@ -154,29 +187,69 @@ const Profile = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 bg-muted rounded-lg p-4">
-            <div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-muted/50 rounded-lg p-3 border border-border/50">
               <p className="text-xs text-muted-foreground">Saldo</p>
-              <p className="text-lg font-bold text-foreground">{formatCurrency(user.balance)}</p>
+              <p className="text-lg font-bold text-primary drop-shadow-[0_0_8px_hsl(185,100%,50%)]">
+                {formatCurrency(user.balance)}
+              </p>
             </div>
-            <div>
+            <div className="bg-muted/50 rounded-lg p-3 border border-border/50">
               <p className="text-xs text-muted-foreground">Total Pendapatan</p>
-              <p className="text-lg font-bold text-success">{formatCurrency(user.totalIncome)}</p>
+              <p className="text-lg font-bold text-success drop-shadow-[0_0_8px_hsl(145,100%,50%)]">
+                {formatCurrency(user.totalIncome)}
+              </p>
             </div>
-            <div>
+            <div className="bg-muted/50 rounded-lg p-3 border border-border/50">
               <p className="text-xs text-muted-foreground">Komisi Rate</p>
-              <p className="text-lg font-bold text-accent">{(commissionRate * 100).toFixed(0)}%</p>
+              <p className="text-lg font-bold text-accent drop-shadow-[0_0_8px_hsl(330,100%,60%)]">
+                {(commissionRate * 100).toFixed(0)}%
+              </p>
             </div>
-            <div>
+            <div className="bg-muted/50 rounded-lg p-3 border border-border/50">
               <p className="text-xs text-muted-foreground">Kode Referral</p>
-              <p className="text-lg font-bold text-primary">{user.referralCode}</p>
+              <p className="text-lg font-bold text-vip-gold drop-shadow-[0_0_8px_hsl(45,100%,55%)]">
+                {user.referralCode}
+              </p>
             </div>
           </div>
         </CardContent>
       </Card>
 
+      {/* Quick Menu */}
+      <Card className="shadow-card border-primary/20">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-primary" />
+            Menu Cepat
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {menuItems.map((item, index) => (
+            <div key={item.label}>
+              <button
+                onClick={() => navigate(item.href)}
+                className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-lg bg-muted flex items-center justify-center ${item.color}`}>
+                    <item.icon className="w-5 h-5" />
+                  </div>
+                  <div className="text-left">
+                    <span className="font-medium text-foreground">{item.label}</span>
+                    <p className="text-xs text-muted-foreground">{item.description}</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-muted-foreground" />
+              </button>
+              {index < menuItems.length - 1 && <Separator />}
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
       {/* Edit Profile */}
-      <Card className="shadow-card">
+      <Card className="shadow-card border-primary/20">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
@@ -184,7 +257,7 @@ const Profile = () => {
               Edit Profil
             </CardTitle>
             {!isEditing && (
-              <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+              <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="border-primary/50">
                 Edit
               </Button>
             )}
@@ -200,6 +273,7 @@ const Profile = () => {
                 onChange={(e) => setEditName(e.target.value)}
                 disabled={!isEditing}
                 placeholder="Nama lengkap"
+                className="bg-muted/50"
               />
             </div>
           </div>
@@ -208,7 +282,7 @@ const Profile = () => {
             <Label>Email</Label>
             <div className="flex items-center gap-2">
               <Mail className="w-4 h-4 text-muted-foreground" />
-              <Input value={user.email} disabled className="bg-muted" />
+              <Input value={user.email} disabled className="bg-muted/50" />
             </div>
             <p className="text-xs text-muted-foreground">Email tidak dapat diubah</p>
           </div>
@@ -222,6 +296,7 @@ const Profile = () => {
                 onChange={(e) => setEditPhone(e.target.value)}
                 disabled={!isEditing}
                 placeholder="08xxxxxxxxxx"
+                className="bg-muted/50"
               />
             </div>
           </div>
@@ -248,7 +323,7 @@ const Profile = () => {
       </Card>
 
       {/* Change Password */}
-      <Card className="shadow-card">
+      <Card className="shadow-card border-primary/20">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
@@ -256,7 +331,7 @@ const Profile = () => {
               Ganti Password
             </CardTitle>
             {!isChangingPassword && (
-              <Button variant="outline" size="sm" onClick={() => setIsChangingPassword(true)}>
+              <Button variant="outline" size="sm" onClick={() => setIsChangingPassword(true)} className="border-primary/50">
                 Ganti
               </Button>
             )}
@@ -272,6 +347,7 @@ const Profile = () => {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Minimal 6 karakter"
+                  className="bg-muted/50"
                 />
                 <button
                   type="button"
@@ -290,6 +366,7 @@ const Profile = () => {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Ulangi password baru"
+                className="bg-muted/50"
               />
             </div>
 
@@ -314,7 +391,7 @@ const Profile = () => {
       </Card>
 
       {/* VIP Info */}
-      <Card className="shadow-card">
+      <Card className="shadow-card border-vip-gold/30">
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Crown className="w-5 h-5 text-vip-gold" />
@@ -322,31 +399,23 @@ const Profile = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+          <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border border-border/50">
             <span className="text-sm">Level Anda</span>
-            <Badge variant="vip">VIP {user.vipLevel}</Badge>
+            <Badge variant="vip" className="gold-pulse">VIP {user.vipLevel}</Badge>
           </div>
-          <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+          <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border border-border/50">
             <span className="text-sm">Komisi Referral</span>
             <span className="font-bold text-accent">{(commissionRate * 100).toFixed(0)}%</span>
           </div>
-          <div className="text-xs text-muted-foreground p-3 bg-success/10 rounded-lg">
+          <div className="text-xs text-muted-foreground p-3 bg-success/10 rounded-lg border border-success/20">
             💡 Ajak lebih banyak teman untuk naik level VIP dan dapatkan komisi lebih tinggi!
           </div>
         </CardContent>
       </Card>
 
-      {/* Account Actions */}
-      <Card className="shadow-card">
+      {/* Logout */}
+      <Card className="shadow-card border-destructive/20">
         <CardContent className="p-0">
-          <button
-            onClick={() => navigate("/statistics")}
-            className="w-full flex items-center justify-between p-4 hover:bg-muted transition-colors"
-          >
-            <span className="font-medium">Lihat Statistik</span>
-            <ChevronRight className="w-5 h-5 text-muted-foreground" />
-          </button>
-          <Separator />
           <button
             onClick={handleLogout}
             className="w-full flex items-center justify-between p-4 hover:bg-destructive/10 transition-colors text-destructive"
