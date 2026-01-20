@@ -56,6 +56,8 @@ export interface TeamMember {
 export interface Product {
   id: number;
   name: string;
+  series: string;
+  model: string;
   price: number;
   dailyIncome: number;
   validity: number;
@@ -63,6 +65,8 @@ export interface Product {
   vipLevel: number;
   image: string;
   description: string;
+  totalStock: number;
+  availableStock: number;
 }
 
 // Commission rates based on VIP level
@@ -461,113 +465,153 @@ export const getInvestmentDistribution = (userId: string): { name: string; value
 export const getAllProducts = (): Product[] => [
   { 
     id: 1, 
-    name: "Paket Investasi Starter", 
+    name: "PowerVault AA", 
+    series: "A Series Starter",
+    model: "CV-ESS-001S",
     price: 150000, 
     dailyIncome: 15000, 
     validity: 20, 
     totalIncome: 300000, 
     vipLevel: 1,
     image: "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=400&h=300&fit=crop",
-    description: "Cocok untuk pemula yang ingin memulai investasi"
+    description: "Cocok untuk pemula yang ingin memulai investasi",
+    totalStock: 1000,
+    availableStock: 847,
   },
   { 
     id: 2, 
-    name: "Paket Investasi Basic", 
+    name: "PowerVault AB", 
+    series: "A Series Basic",
+    model: "CV-ESS-002B",
     price: 300000, 
     dailyIncome: 33000, 
     validity: 20, 
     totalIncome: 660000, 
     vipLevel: 1,
     image: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400&h=300&fit=crop",
-    description: "Investasi dasar dengan return yang menarik"
+    description: "Investasi dasar dengan return yang menarik",
+    totalStock: 900,
+    availableStock: 774,
   },
   { 
     id: 3, 
-    name: "Paket Investasi Pro", 
+    name: "PowerVault Pro", 
+    series: "B Series Period",
+    model: "CV-ESS-100S",
     price: 500000, 
     dailyIncome: 55000, 
     validity: 20, 
     totalIncome: 1100000, 
     vipLevel: 1,
     image: "https://images.unsplash.com/photo-1642790106117-e829e14a795f?w=400&h=300&fit=crop",
-    description: "Untuk investor yang siap naik level"
+    description: "Untuk investor yang siap naik level",
+    totalStock: 800,
+    availableStock: 623,
   },
   { 
     id: 4, 
-    name: "Paket Premium A", 
+    name: "Premium Alpha", 
+    series: "C Series Premium",
+    model: "CV-PRE-200A",
     price: 1000000, 
     dailyIncome: 115000, 
     validity: 20, 
     totalIncome: 2300000, 
     vipLevel: 2,
     image: "https://images.unsplash.com/photo-1518546305927-5a555bb7020d?w=400&h=300&fit=crop",
-    description: "Paket premium dengan keuntungan maksimal"
+    description: "Paket premium dengan keuntungan maksimal",
+    totalStock: 600,
+    availableStock: 412,
   },
   { 
     id: 5, 
-    name: "Paket Premium B", 
+    name: "Premium Beta", 
+    series: "C Series Premium",
+    model: "CV-PRE-200B",
     price: 2000000, 
     dailyIncome: 240000, 
     validity: 20, 
     totalIncome: 4800000, 
     vipLevel: 2,
     image: "https://images.unsplash.com/photo-1621761191319-c6fb62004040?w=400&h=300&fit=crop",
-    description: "Double keuntungan untuk member premium"
+    description: "Double keuntungan untuk member premium",
+    totalStock: 500,
+    availableStock: 289,
   },
   { 
     id: 6, 
-    name: "Paket Elite Gold", 
+    name: "Elite Gold", 
+    series: "D Series Elite",
+    model: "CV-ELT-300G",
     price: 5000000, 
     dailyIncome: 625000, 
     validity: 20, 
     totalIncome: 12500000, 
     vipLevel: 3,
     image: "https://images.unsplash.com/photo-1610375461246-83df859d849d?w=400&h=300&fit=crop",
-    description: "Eksklusif untuk member elite"
+    description: "Eksklusif untuk member elite",
+    totalStock: 400,
+    availableStock: 156,
   },
   { 
     id: 7, 
-    name: "Paket Elite Platinum", 
+    name: "Elite Platinum", 
+    series: "D Series Elite",
+    model: "CV-ELT-300P",
     price: 10000000, 
     dailyIncome: 1300000, 
     validity: 20, 
     totalIncome: 26000000, 
     vipLevel: 3,
     image: "https://images.unsplash.com/photo-1624365168968-f283d506c6b6?w=400&h=300&fit=crop",
-    description: "Platinum grade investment package"
+    description: "Platinum grade investment package",
+    totalStock: 300,
+    availableStock: 98,
   },
   { 
     id: 8, 
-    name: "Paket Diamond", 
+    name: "Diamond Core", 
+    series: "E Series Diamond",
+    model: "CV-DIA-400C",
     price: 25000000, 
     dailyIncome: 3500000, 
     validity: 20, 
     totalIncome: 70000000, 
     vipLevel: 4,
     image: "https://images.unsplash.com/photo-1515606378517-3451a4fa2e12?w=400&h=300&fit=crop",
-    description: "Diamond tier dengan return fantastis"
+    description: "Diamond tier dengan return fantastis",
+    totalStock: 200,
+    availableStock: 67,
   },
   { 
     id: 9, 
-    name: "Paket Diamond Plus", 
+    name: "Diamond Plus", 
+    series: "E Series Diamond",
+    model: "CV-DIA-400P",
     price: 50000000, 
     dailyIncome: 7500000, 
     validity: 20, 
     totalIncome: 150000000, 
     vipLevel: 4,
     image: "https://images.unsplash.com/photo-1639762681057-408e52192e55?w=400&h=300&fit=crop",
-    description: "Premium diamond untuk investor serius"
+    description: "Premium diamond untuk investor serius",
+    totalStock: 150,
+    availableStock: 34,
   },
   { 
     id: 10, 
-    name: "Paket Ultimate", 
+    name: "Ultimate Titan", 
+    series: "F Series Ultimate",
+    model: "CV-ULT-500T",
     price: 100000000, 
     dailyIncome: 16000000, 
     validity: 20, 
     totalIncome: 320000000, 
     vipLevel: 5,
     image: "https://images.unsplash.com/photo-1620321023374-d1a68fbc720d?w=400&h=300&fit=crop",
-    description: "Ultimate package dengan return maksimal"
+    description: "Ultimate package dengan return maksimal",
+    totalStock: 100,
+    availableStock: 12,
   },
 ];
 

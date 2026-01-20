@@ -240,12 +240,20 @@ const Admin = () => {
           </div>
           <p className="text-sm text-muted-foreground mt-1">Kelola pengguna dan transaksi</p>
         </div>
-        <Link to="/admin/users">
-          <Button variant="default" size="sm">
-            <UserCog className="w-4 h-4 mr-2" />
-            Manage Users
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          <Link to="/admin/products">
+            <Button variant="outline" size="sm">
+              <Package className="w-4 h-4 mr-2" />
+              Produk
+            </Button>
+          </Link>
+          <Link to="/admin/users">
+            <Button variant="default" size="sm">
+              <UserCog className="w-4 h-4 mr-2" />
+              Users
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Stats */}
