@@ -2,14 +2,16 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Package, TrendingUp, Lock, Sparkles } from "lucide-react";
+import { Package, TrendingUp, Lock, Sparkles, Eye, Calendar, Zap } from "lucide-react";
 import { getCurrentUser, getAllProducts, formatCurrency, User, Product } from "@/lib/store";
 import InvestDialog from "@/components/InvestDialog";
+import ProductDetailDialog from "@/components/ProductDetailDialog";
 
 const ProductPage = () => {
   const [user, setUser] = useState<User | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [investOpen, setInvestOpen] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   const loadData = () => {
     setUser(getCurrentUser());
@@ -31,9 +33,21 @@ const ProductPage = () => {
     (product) => product.vipLevel > userVipLevel
   );
 
+  const handleViewDetail = (product: Product) => {
+    setSelectedProduct(product);
+    setDetailOpen(true);
+  };
+
   const handleInvest = (product: Product) => {
     setSelectedProduct(product);
     setInvestOpen(true);
+  };
+
+  const handleInvestFromDetail = () => {
+    if (selectedProduct) {
+      setDetailOpen(false);
+      setTimeout(() => setInvestOpen(true), 200);
+    }
   };
 
   return (
@@ -70,66 +84,83 @@ const ProductPage = () => {
               key={product.id} 
               className="shadow-card hover:shadow-glow transition-all duration-300 overflow-hidden border-primary/20 hover:border-primary/50"
             >
-              {/* Product Image */}
-              <div className="relative h-40 overflow-hidden">
-                <img 
-                  src={product.image} 
-                  alt={product.name}
-                  className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent" />
-                <Badge variant="vip" className="absolute top-3 right-3 text-xs">
-                  VIP {product.vipLevel}
-                </Badge>
-              </div>
+              <CardContent className="p-0">
+                <div className="flex">
+                  {/* Product Image - Left Side */}
+                  <div className="relative w-32 sm:w-40 flex-shrink-0">
+                    <img 
+                      src={product.image} 
+                      alt={product.name}
+                      className="w-full h-full object-cover min-h-[180px]"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent to-card/50" />
+                    <Badge variant="vip" className="absolute top-2 left-2 text-xs">
+                      VIP {product.vipLevel}
+                    </Badge>
+                  </div>
 
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-foreground text-lg mb-1">{product.name}</h3>
-                    <p className="text-sm text-muted-foreground">{product.description}</p>
+                  {/* Product Info - Right Side */}
+                  <div className="flex-1 p-4 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-start justify-between mb-1">
+                        <h3 className="font-semibold text-foreground text-lg leading-tight">{product.name}</h3>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-1">{product.series}</p>
+                      <p className="text-xs text-primary/70 font-mono mb-3">{product.model}</p>
+
+                      {/* Price */}
+                      <p className="text-xl font-bold text-primary drop-shadow-[0_0_10px_hsl(185,100%,50%)] mb-3">
+                        {formatCurrency(product.price)}
+                      </p>
+
+                      {/* Stats Grid */}
+                      <div className="grid grid-cols-2 gap-2 mb-3">
+                        <div className="flex items-center gap-1.5">
+                          <TrendingUp className="w-3.5 h-3.5 text-success" />
+                          <div>
+                            <p className="text-[10px] text-muted-foreground">Harian</p>
+                            <p className="text-xs font-bold text-success">{formatCurrency(product.dailyIncome)}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5 text-accent" />
+                          <div>
+                            <p className="text-[10px] text-muted-foreground">Durasi</p>
+                            <p className="text-xs font-bold text-foreground">{product.validity} hari</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ROI Badge */}
+                      <div className="flex items-center gap-1.5 mb-3">
+                        <Zap className="w-3.5 h-3.5 text-vip-gold" />
+                        <span className="text-xs font-semibold text-vip-gold">
+                          ROI: {((product.totalIncome / product.price - 1) * 100).toFixed(0)}% • Total: {formatCurrency(product.totalIncome)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleViewDetail(product)}
+                      >
+                        <Eye className="w-3.5 h-3.5 mr-1.5" />
+                        Detail
+                      </Button>
+                      <Button 
+                        size="sm"
+                        className="flex-1 neon-pulse" 
+                        onClick={() => handleInvest(product)}
+                      >
+                        Investasi
+                      </Button>
+                    </div>
                   </div>
                 </div>
-
-                <div className="text-right mb-4">
-                  <p className="text-xs text-muted-foreground mb-1">Harga Investasi</p>
-                  <p className="text-2xl font-bold text-primary drop-shadow-[0_0_10px_hsl(185,100%,50%)]">
-                    {formatCurrency(product.price)}
-                  </p>
-                </div>
-
-                <div className="bg-muted/50 rounded-lg p-4 mb-4 space-y-3 border border-border/50">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Penghasilan Harian</span>
-                    <span className="text-base font-bold text-success drop-shadow-[0_0_8px_hsl(145,100%,50%)]">
-                      {formatCurrency(product.dailyIncome)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Masa Berlaku</span>
-                    <span className="text-base font-semibold text-foreground">{product.validity} Hari</span>
-                  </div>
-                  <div className="flex items-center justify-between pt-2 border-t border-border/50">
-                    <span className="text-sm font-medium text-foreground">Total Penghasilan</span>
-                    <span className="text-lg font-bold text-accent drop-shadow-[0_0_8px_hsl(330,100%,60%)]">
-                      {formatCurrency(product.totalIncome)}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 mb-3 p-3 bg-success/10 rounded-md border border-success/20">
-                  <TrendingUp className="w-4 h-4 text-success" />
-                  <span className="text-sm font-medium text-success">
-                    ROI: {((product.totalIncome / product.price - 1) * 100).toFixed(0)}%
-                  </span>
-                </div>
-
-                <Button 
-                  className="w-full neon-pulse" 
-                  onClick={() => handleInvest(product)}
-                >
-                  Investasi Sekarang
-                </Button>
               </CardContent>
             </Card>
           ))}
@@ -144,7 +175,7 @@ const ProductPage = () => {
             <h2 className="text-lg font-heading font-bold text-foreground">Produk Terkunci</h2>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3">
             {lockedProducts.map((product) => (
               <Card 
                 key={product.id} 
@@ -152,28 +183,33 @@ const ProductPage = () => {
               >
                 <div className="absolute inset-0 bg-background/60 backdrop-blur-sm z-10 flex items-center justify-center">
                   <div className="text-center p-4">
-                    <Lock className="w-8 h-8 text-vip-gold mx-auto mb-2" />
-                    <Badge variant="outline" className="bg-card/80 border-vip-gold text-vip-gold">
+                    <Lock className="w-6 h-6 text-vip-gold mx-auto mb-2" />
+                    <Badge variant="outline" className="bg-card/80 border-vip-gold text-vip-gold text-xs">
                       Butuh VIP {product.vipLevel}
                     </Badge>
                   </div>
                 </div>
                 
-                {/* Product Image */}
-                <div className="relative h-32 overflow-hidden">
-                  <img 
-                    src={product.image} 
-                    alt={product.name}
-                    className="w-full h-full object-cover grayscale"
-                  />
-                </div>
+                <CardContent className="p-0">
+                  <div className="flex">
+                    {/* Product Image */}
+                    <div className="relative w-24 flex-shrink-0">
+                      <img 
+                        src={product.image} 
+                        alt={product.name}
+                        className="w-full h-full object-cover min-h-[100px] grayscale"
+                      />
+                    </div>
 
-                <CardContent className="p-4">
-                  <h3 className="font-semibold text-foreground text-lg mb-1">{product.name}</h3>
-                  <p className="text-xl font-bold text-primary/50">{formatCurrency(product.price)}</p>
-                  <p className="text-sm text-success/50 mt-1">
-                    +{formatCurrency(product.dailyIncome)}/hari
-                  </p>
+                    {/* Product Info */}
+                    <div className="flex-1 p-3">
+                      <h3 className="font-semibold text-foreground text-sm mb-1">{product.name}</h3>
+                      <p className="text-sm font-bold text-primary/50">{formatCurrency(product.price)}</p>
+                      <p className="text-xs text-success/50 mt-0.5">
+                        +{formatCurrency(product.dailyIncome)}/hari
+                      </p>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -193,6 +229,15 @@ const ProductPage = () => {
           </Card>
         </div>
       )}
+
+      {/* Product Detail Dialog */}
+      <ProductDetailDialog
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        product={selectedProduct}
+        userName={user?.name}
+        onInvest={handleInvestFromDetail}
+      />
 
       {/* Invest Dialog */}
       <InvestDialog
