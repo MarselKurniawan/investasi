@@ -16,7 +16,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       </div>
       
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 glass border-t border-primary/20">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-primary/20 backdrop-blur-xl bg-card/90">
         <div className="mx-auto max-w-md flex items-center justify-around px-2 py-3">
           <NavLink
             to="/"
