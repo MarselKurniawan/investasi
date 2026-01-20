@@ -33,6 +33,10 @@ import {
   Users,
   Wallet,
   TrendingUp,
+  Landmark,
+  Share2,
+  Headphones,
+  Package,
 } from "lucide-react";
 
 const Profile = () => {
@@ -42,6 +46,12 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [activeSection, setActiveSection] = useState<string | null>(null);
+
+  // Bank form
+  const [bankName, setBankName] = useState("");
+  const [bankAccount, setBankAccount] = useState("");
+  const [bankAccountName, setBankAccountName] = useState("");
 
   // Edit form
   const [editName, setEditName] = useState("");
@@ -57,6 +67,14 @@ const Profile = () => {
       setUser(currentUser);
       setEditName(currentUser.name);
       setEditPhone(currentUser.phone || "");
+      // Load bank info from localStorage
+      const savedBank = localStorage.getItem(`bank_${currentUser.id}`);
+      if (savedBank) {
+        const bankData = JSON.parse(savedBank);
+        setBankName(bankData.bankName || "");
+        setBankAccount(bankData.bankAccount || "");
+        setBankAccountName(bankData.bankAccountName || "");
+      }
     }
   };
 
@@ -80,10 +98,35 @@ const Profile = () => {
     });
 
     loadData();
-    setIsEditing(false);
+    setActiveSection(null);
     toast({
       title: "Profil Diperbarui",
       description: "Data profil berhasil disimpan",
+    });
+  };
+
+  const handleSaveBank = () => {
+    if (!user) return;
+    
+    if (!bankName.trim() || !bankAccount.trim() || !bankAccountName.trim()) {
+      toast({
+        title: "Error",
+        description: "Semua field harus diisi",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    localStorage.setItem(`bank_${user.id}`, JSON.stringify({
+      bankName: bankName.trim(),
+      bankAccount: bankAccount.trim(),
+      bankAccountName: bankAccountName.trim(),
+    }));
+
+    setActiveSection(null);
+    toast({
+      title: "Rekening Disimpan",
+      description: "Data rekening bank berhasil disimpan",
     });
   };
 
@@ -106,8 +149,7 @@ const Profile = () => {
       return;
     }
 
-    // In demo mode, we just show success
-    setIsChangingPassword(false);
+    setActiveSection(null);
     setNewPassword("");
     setConfirmPassword("");
     toast({
@@ -131,24 +173,57 @@ const Profile = () => {
 
   const menuItems = [
     {
-      icon: BarChart3,
-      label: "Lihat Statistik",
-      description: "Analisis performa investasi",
-      href: "/statistics",
+      icon: Edit2,
+      label: "Update Profile",
+      description: "Ubah nama dan nomor telepon",
+      action: () => setActiveSection("profile"),
       color: "text-primary",
     },
     {
-      icon: Users,
-      label: "Tim & Referral",
-      description: "Kelola tim dan lihat komisi",
-      href: "/team",
+      icon: Lock,
+      label: "Change Password",
+      description: "Ganti password akun Anda",
+      action: () => setActiveSection("password"),
+      color: "text-accent",
+    },
+    {
+      icon: Package,
+      label: "My Investment",
+      description: "Lihat investasi aktif Anda",
+      href: "/account",
       color: "text-success",
     },
     {
       icon: Wallet,
-      label: "Riwayat Transaksi",
-      description: "Lihat semua transaksi Anda",
+      label: "History Transaction",
+      description: "Riwayat recharge & withdraw",
       href: "/account",
+      color: "text-vip-gold",
+    },
+    {
+      icon: Landmark,
+      label: "Account Bank",
+      description: "Kelola rekening bank Anda",
+      action: () => setActiveSection("bank"),
+      color: "text-primary",
+    },
+    {
+      icon: Share2,
+      label: "Referral",
+      description: "Bagikan kode referral Anda",
+      href: "/team",
+      color: "text-success",
+    },
+    {
+      icon: Headphones,
+      label: "Contact Us",
+      description: "Hubungi customer service",
+      action: () => {
+        toast({
+          title: "Hubungi Kami",
+          description: "WhatsApp: +62 812-3456-7890 | Email: support@investasi.app",
+        });
+      },
       color: "text-accent",
     },
   ];
@@ -216,19 +291,19 @@ const Profile = () => {
         </CardContent>
       </Card>
 
-      {/* Quick Menu */}
+      {/* Menu Items */}
       <Card className="shadow-card border-primary/20">
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-primary" />
-            Menu Cepat
+            Menu Akun
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           {menuItems.map((item, index) => (
             <div key={item.label}>
               <button
-                onClick={() => navigate(item.href)}
+                onClick={() => item.action ? item.action() : item.href && navigate(item.href)}
                 className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
               >
                 <div className="flex items-center gap-3">
@@ -248,60 +323,56 @@ const Profile = () => {
         </CardContent>
       </Card>
 
-      {/* Edit Profile */}
-      <Card className="shadow-card border-primary/20">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Edit2 className="w-5 h-5 text-primary" />
-              Edit Profil
-            </CardTitle>
-            {!isEditing && (
-              <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="border-primary/50">
-                Edit
+      {/* Update Profile Section */}
+      {activeSection === "profile" && (
+        <Card className="shadow-card border-primary/20">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Edit2 className="w-5 h-5 text-primary" />
+                Update Profile
+              </CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => setActiveSection(null)}>
+                <X className="w-4 h-4" />
               </Button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Nama Lengkap</Label>
-            <div className="flex items-center gap-2">
-              <UserIcon className="w-4 h-4 text-muted-foreground" />
-              <Input
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                disabled={!isEditing}
-                placeholder="Nama lengkap"
-                className="bg-muted/50"
-              />
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Email</Label>
-            <div className="flex items-center gap-2">
-              <Mail className="w-4 h-4 text-muted-foreground" />
-              <Input value={user.email} disabled className="bg-muted/50" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Nama Lengkap</Label>
+              <div className="flex items-center gap-2">
+                <UserIcon className="w-4 h-4 text-muted-foreground" />
+                <Input
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder="Nama lengkap"
+                  className="bg-muted/50"
+                />
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground">Email tidak dapat diubah</p>
-          </div>
 
-          <div className="space-y-2">
-            <Label>Nomor Telepon</Label>
-            <div className="flex items-center gap-2">
-              <Phone className="w-4 h-4 text-muted-foreground" />
-              <Input
-                value={editPhone}
-                onChange={(e) => setEditPhone(e.target.value)}
-                disabled={!isEditing}
-                placeholder="08xxxxxxxxxx"
-                className="bg-muted/50"
-              />
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4 text-muted-foreground" />
+                <Input value={user.email} disabled className="bg-muted/50" />
+              </div>
+              <p className="text-xs text-muted-foreground">Email tidak dapat diubah</p>
             </div>
-          </div>
 
-          {isEditing && (
+            <div className="space-y-2">
+              <Label>Nomor Telepon</Label>
+              <div className="flex items-center gap-2">
+                <Phone className="w-4 h-4 text-muted-foreground" />
+                <Input
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  placeholder="08xxxxxxxxxx"
+                  className="bg-muted/50"
+                />
+              </div>
+            </div>
+
             <div className="flex gap-2 pt-2">
               <Button className="flex-1" onClick={handleSaveProfile}>
                 <Save className="w-4 h-4 mr-2" />
@@ -310,34 +381,32 @@ const Profile = () => {
               <Button
                 variant="outline"
                 onClick={() => {
-                  setIsEditing(false);
+                  setActiveSection(null);
                   setEditName(user.name);
                   setEditPhone(user.phone || "");
                 }}
               >
+                Batal
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Change Password Section */}
+      {activeSection === "password" && (
+        <Card className="shadow-card border-primary/20">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Lock className="w-5 h-5 text-primary" />
+                Change Password
+              </CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => setActiveSection(null)}>
                 <X className="w-4 h-4" />
               </Button>
             </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Change Password */}
-      <Card className="shadow-card border-primary/20">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Lock className="w-5 h-5 text-primary" />
-              Ganti Password
-            </CardTitle>
-            {!isChangingPassword && (
-              <Button variant="outline" size="sm" onClick={() => setIsChangingPassword(true)} className="border-primary/50">
-                Ganti
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-        {isChangingPassword && (
+          </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label>Password Baru</Label>
@@ -378,17 +447,75 @@ const Profile = () => {
               <Button
                 variant="outline"
                 onClick={() => {
-                  setIsChangingPassword(false);
+                  setActiveSection(null);
                   setNewPassword("");
                   setConfirmPassword("");
                 }}
               >
-                <X className="w-4 h-4" />
+                Batal
               </Button>
             </div>
           </CardContent>
-        )}
-      </Card>
+        </Card>
+      )}
+
+      {/* Account Bank Section */}
+      {activeSection === "bank" && (
+        <Card className="shadow-card border-primary/20">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Landmark className="w-5 h-5 text-primary" />
+                Account Bank
+              </CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => setActiveSection(null)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Nama Bank</Label>
+              <Input
+                value={bankName}
+                onChange={(e) => setBankName(e.target.value)}
+                placeholder="Contoh: BCA, Mandiri, BNI"
+                className="bg-muted/50"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Nomor Rekening</Label>
+              <Input
+                value={bankAccount}
+                onChange={(e) => setBankAccount(e.target.value)}
+                placeholder="Masukkan nomor rekening"
+                className="bg-muted/50"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Nama Pemilik Rekening</Label>
+              <Input
+                value={bankAccountName}
+                onChange={(e) => setBankAccountName(e.target.value)}
+                placeholder="Nama sesuai rekening"
+                className="bg-muted/50"
+              />
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button className="flex-1" onClick={handleSaveBank}>
+                <Save className="w-4 h-4 mr-2" />
+                Simpan Rekening
+              </Button>
+              <Button variant="outline" onClick={() => setActiveSection(null)}>
+                Batal
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* VIP Info */}
       <Card className="shadow-card border-vip-gold/30">
@@ -430,7 +557,7 @@ const Profile = () => {
       </Card>
 
       {/* Demo Notice */}
-      <div className="text-center text-xs text-muted-foreground p-4">
+      <div className="text-center text-xs text-muted-foreground p-4 pb-8">
         <p>🎮 Mode Demo - Data disimpan di browser</p>
       </div>
     </div>
