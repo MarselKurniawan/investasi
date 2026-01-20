@@ -67,12 +67,16 @@ export default {
         card: "var(--shadow-card)",
         glow: "var(--shadow-glow)",
         "gold-glow": "var(--shadow-gold-glow)",
+        "success-glow": "var(--shadow-success-glow)",
+        "accent-glow": "var(--shadow-accent-glow)",
       },
       backgroundImage: {
         "gradient-primary": "var(--gradient-primary)",
         "gradient-gold": "var(--gradient-gold)",
         "gradient-success": "var(--gradient-success)",
+        "gradient-accent": "var(--gradient-accent)",
         "gradient-background": "var(--gradient-background)",
+        "gradient-card": "var(--gradient-card)",
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -81,25 +85,22 @@ export default {
       },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
+        "shimmer": {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "shimmer": "shimmer 2s linear infinite",
       },
     },
   },
