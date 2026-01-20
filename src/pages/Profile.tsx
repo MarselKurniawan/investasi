@@ -34,6 +34,7 @@ import {
   Wallet,
   TrendingUp,
   Landmark,
+  Settings,
   Share2,
   Headphones,
   Package,
@@ -172,6 +173,15 @@ const Profile = () => {
   const commissionRate = getCommissionRate(user.vipLevel);
 
   const menuItems = [
+    // Admin menu - only show for admin users
+    ...(user.isAdmin ? [{
+      icon: Settings,
+      label: "Admin Dashboard",
+      description: "Kelola platform dan pengguna",
+      href: "/admin",
+      color: "text-destructive",
+      isAdmin: true,
+    }] : []),
     {
       icon: Edit2,
       label: "Update Profile",
