@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   TrendingUp,
@@ -10,21 +11,29 @@ import {
   Users,
   Gift,
   Package,
+  Sparkles,
 } from "lucide-react";
-import { getCurrentUser, getTransactions, getInvestments, formatCurrency, User, Transaction, Investment } from "@/lib/store";
+import { getCurrentUser, getTransactions, getInvestments, formatCurrency, canClaimToday, claimDailyIncome, User, Transaction, Investment } from "@/lib/store";
+import ClaimRewardDialog from "@/components/ClaimRewardDialog";
 
 const Account = () => {
   const [user, setUser] = useState<User | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [investments, setInvestments] = useState<Investment[]>([]);
+  const [claimDialogOpen, setClaimDialogOpen] = useState(false);
+  const [selectedInvestment, setSelectedInvestment] = useState<Investment | null>(null);
 
-  useEffect(() => {
+  const refreshData = () => {
     const currentUser = getCurrentUser();
     if (currentUser) {
       setUser(currentUser);
       setTransactions(getTransactions(currentUser.id));
       setInvestments(getInvestments(currentUser.id));
     }
+  };
+
+  useEffect(() => {
+    refreshData();
   }, []);
 
   const monitoringData = {
@@ -78,6 +87,20 @@ const Account = () => {
   };
 
   const activeInvestments = investments.filter(i => i.status === 'active');
+
+  const handleOpenClaimDialog = (investment: Investment) => {
+    setSelectedInvestment(investment);
+    setClaimDialogOpen(true);
+  };
+
+  const handleClaim = () => {
+    if (!selectedInvestment) return;
+    
+    const result = claimDailyIncome(selectedInvestment.id);
+    if (result.success) {
+      refreshData();
+    }
+  };
 
   return (
     <div className="space-y-6 p-4 pt-6">
@@ -171,33 +194,57 @@ const Account = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {activeInvestments.map((inv) => (
-              <div key={inv.id} className="bg-muted rounded-lg p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <p className="font-semibold text-foreground">{inv.productName}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {inv.daysRemaining} hari tersisa
-                    </p>
+            {activeInvestments.map((inv) => {
+              const canClaim = canClaimToday(inv);
+              return (
+                <div key={inv.id} className="bg-muted rounded-lg p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <p className="font-semibold text-foreground">{inv.productName}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {inv.daysRemaining} hari tersisa
+                      </p>
+                    </div>
+                    <Badge variant="success" className="text-xs">Aktif</Badge>
                   </div>
-                  <Badge variant="success" className="text-xs">Aktif</Badge>
+                  <div className="grid grid-cols-3 gap-2 text-center pt-2 border-t border-border">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Investasi</p>
+                      <p className="text-sm font-semibold">{formatCurrency(inv.amount)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Harian</p>
+                      <p className="text-sm font-semibold text-success">{formatCurrency(inv.dailyIncome)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Earned</p>
+                      <p className="text-sm font-semibold text-accent">{formatCurrency(inv.totalEarned)}</p>
+                    </div>
+                  </div>
+                  {/* Claim Button */}
+                  <div className="mt-3 pt-3 border-t border-border">
+                    {canClaim ? (
+                      <Button
+                        onClick={() => handleOpenClaimDialog(inv)}
+                        className="w-full bg-gradient-to-r from-success to-primary hover:from-success/90 hover:to-primary/90 text-primary-foreground font-semibold shadow-lg shadow-success/30 neon-pulse"
+                      >
+                        <Gift className="w-4 h-4 mr-2" />
+                        Claim {formatCurrency(inv.dailyIncome)}
+                        <Sparkles className="w-4 h-4 ml-2" />
+                      </Button>
+                    ) : (
+                      <Button
+                        disabled
+                        className="w-full bg-muted-foreground/20 text-muted-foreground cursor-not-allowed"
+                      >
+                        <Gift className="w-4 h-4 mr-2" />
+                        Sudah Diklaim Hari Ini
+                      </Button>
+                    )}
+                  </div>
                 </div>
-                <div className="grid grid-cols-3 gap-2 text-center pt-2 border-t border-border">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Investasi</p>
-                    <p className="text-sm font-semibold">{formatCurrency(inv.amount)}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Harian</p>
-                    <p className="text-sm font-semibold text-success">{formatCurrency(inv.dailyIncome)}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Earned</p>
-                    <p className="text-sm font-semibold text-accent">{formatCurrency(inv.totalEarned)}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </CardContent>
         </Card>
       )}
@@ -349,6 +396,15 @@ const Account = () => {
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* Claim Reward Dialog */}
+      <ClaimRewardDialog
+        open={claimDialogOpen}
+        onOpenChange={setClaimDialogOpen}
+        amount={selectedInvestment?.dailyIncome || 0}
+        productName={selectedInvestment?.productName || ""}
+        onClaim={handleClaim}
+      />
     </div>
   );
 };
