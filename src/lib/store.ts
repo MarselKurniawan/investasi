@@ -31,6 +31,7 @@ export interface Investment {
   totalEarned: number;
   status: 'active' | 'completed';
   createdAt: string;
+  lastClaimedAt?: string;
 }
 
 export interface Transaction {
@@ -287,6 +288,75 @@ export const addInvestment = (investment: Omit<Investment, 'id' | 'createdAt'>):
   processReferralCommission(user.id, investment.amount);
 
   return newInvestment;
+};
+
+// Check if investment can be claimed today
+export const canClaimToday = (investment: Investment): boolean => {
+  if (investment.status !== 'active' || investment.daysRemaining <= 0) return false;
+  
+  if (!investment.lastClaimedAt) return true;
+  
+  const lastClaimed = new Date(investment.lastClaimedAt);
+  const today = new Date();
+  
+  // Reset at midnight
+  return lastClaimed.toDateString() !== today.toDateString();
+};
+
+// Claim daily income for an investment
+export const claimDailyIncome = (investmentId: string): { success: boolean; amount: number } => {
+  const user = getCurrentUser();
+  if (!user) return { success: false, amount: 0 };
+
+  const investments = getInvestments(user.id);
+  const invIdx = investments.findIndex(i => i.id === investmentId);
+  
+  if (invIdx === -1) return { success: false, amount: 0 };
+  
+  const investment = investments[invIdx];
+  
+  if (!canClaimToday(investment)) return { success: false, amount: 0 };
+  
+  const dailyIncome = investment.dailyIncome;
+  
+  // Update investment
+  investments[invIdx].lastClaimedAt = new Date().toISOString();
+  investments[invIdx].totalEarned += dailyIncome;
+  investments[invIdx].daysRemaining -= 1;
+  
+  // Check if investment is completed
+  if (investments[invIdx].daysRemaining <= 0) {
+    investments[invIdx].status = 'completed';
+  }
+  
+  saveInvestments(user.id, investments);
+  
+  // Update user balance and stats
+  const updatedUser = {
+    ...user,
+    balance: user.balance + dailyIncome,
+    totalIncome: user.totalIncome + dailyIncome,
+  };
+  saveUser(updatedUser);
+  
+  // Update in allUsers
+  const allUsers = getAllUsers();
+  const userIdx = allUsers.findIndex(u => u.id === user.id);
+  if (userIdx !== -1) {
+    allUsers[userIdx] = updatedUser;
+    saveAllUsers(allUsers);
+  }
+  
+  // Add income transaction
+  addTransaction({
+    userId: user.id,
+    type: 'income',
+    amount: dailyIncome,
+    status: 'success',
+    description: `Penghasilan harian dari ${investment.productName}`,
+  });
+  
+  return { success: true, amount: dailyIncome };
 };
 
 // Get transactions

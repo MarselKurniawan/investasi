@@ -131,6 +131,37 @@
   }
 }
 
+/* Confetti animation for claim reward */
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-100%) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(400%) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+@keyframes float-up {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-50px) scale(1.5);
+    opacity: 0;
+  }
+}
+
+.animate-confetti {
+  animation: confetti-fall 2s ease-out forwards;
+}
+
+.animate-float-up {
+  animation: float-up 1s ease-out forwards;
+}
+
 .neon-pulse {
   animation: neon-pulse 2s ease-in-out infinite;
 }
