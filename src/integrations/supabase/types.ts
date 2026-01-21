@@ -14,16 +14,282 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bank_accounts: {
+        Row: {
+          account_name: string
+          account_number: string
+          account_type: string
+          created_at: string | null
+          id: string
+          provider: string
+          user_id: string
+        }
+        Insert: {
+          account_name: string
+          account_number: string
+          account_type: string
+          created_at?: string | null
+          id?: string
+          provider: string
+          user_id: string
+        }
+        Update: {
+          account_name?: string
+          account_number?: string
+          account_type?: string
+          created_at?: string | null
+          id?: string
+          provider?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      coupons: {
+        Row: {
+          code: string
+          created_at: string | null
+          id: string
+          is_used: boolean | null
+          reward_amount: number | null
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          id?: string
+          is_used?: boolean | null
+          reward_amount?: number | null
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          id?: string
+          is_used?: boolean | null
+          reward_amount?: number | null
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: []
+      }
+      investments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          daily_income: number
+          days_remaining: number
+          id: string
+          last_claimed_at: string | null
+          product_id: string | null
+          product_name: string
+          status: string | null
+          total_earned: number | null
+          total_income: number
+          user_id: string
+          validity: number
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          daily_income: number
+          days_remaining: number
+          id?: string
+          last_claimed_at?: string | null
+          product_id?: string | null
+          product_name: string
+          status?: string | null
+          total_earned?: number | null
+          total_income: number
+          user_id: string
+          validity: number
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          daily_income?: number
+          days_remaining?: number
+          id?: string
+          last_claimed_at?: string | null
+          product_id?: string | null
+          product_name?: string
+          status?: string | null
+          total_earned?: number | null
+          total_income?: number
+          user_id?: string
+          validity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          created_at: string | null
+          daily_income: number
+          description: string | null
+          id: string
+          image: string | null
+          is_active: boolean | null
+          name: string
+          price: number
+          total_income: number
+          validity: number
+          vip_level: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          daily_income: number
+          description?: string | null
+          id?: string
+          image?: string | null
+          is_active?: boolean | null
+          name: string
+          price: number
+          total_income: number
+          validity: number
+          vip_level?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          daily_income?: number
+          description?: string | null
+          id?: string
+          image?: string | null
+          is_active?: boolean | null
+          name?: string
+          price?: number
+          total_income?: number
+          validity?: number
+          vip_level?: number | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          balance: number | null
+          created_at: string | null
+          email: string
+          id: string
+          name: string
+          phone: string | null
+          referral_code: string | null
+          referred_by: string | null
+          team_income: number | null
+          total_income: number | null
+          total_recharge: number | null
+          total_withdraw: number | null
+          updated_at: string | null
+          user_id: string
+          vip_level: number | null
+        }
+        Insert: {
+          balance?: number | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string
+          phone?: string | null
+          referral_code?: string | null
+          referred_by?: string | null
+          team_income?: number | null
+          total_income?: number | null
+          total_recharge?: number | null
+          total_withdraw?: number | null
+          updated_at?: string | null
+          user_id: string
+          vip_level?: number | null
+        }
+        Update: {
+          balance?: number | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string
+          phone?: string | null
+          referral_code?: string | null
+          referred_by?: string | null
+          team_income?: number | null
+          total_income?: number | null
+          total_recharge?: number | null
+          total_withdraw?: number | null
+          updated_at?: string | null
+          user_id?: string
+          vip_level?: number | null
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          description: string | null
+          id: string
+          status: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          status?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          status?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_referral_code: { Args: never; Returns: string }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +416,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
