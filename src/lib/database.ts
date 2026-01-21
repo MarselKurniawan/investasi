@@ -172,7 +172,7 @@ export const getInvestments = async (userId: string): Promise<Investment[]> => {
   return data || [];
 };
 
-export const createInvestment = async (investment: Omit<Investment, 'id' | 'created_at'>): Promise<Investment | null> => {
+export const createInvestment = async (investment: Omit<Investment, 'id' | 'created_at' | 'last_claimed_at'>): Promise<Investment | null> => {
   const { data, error } = await supabase
     .from('investments')
     .insert(investment)

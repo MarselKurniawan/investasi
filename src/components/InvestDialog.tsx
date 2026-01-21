@@ -2,19 +2,10 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { addInvestment, addTransaction, updateUser, getCurrentUser, formatCurrency } from "@/lib/store";
+import { Product, formatCurrency, createInvestment, createTransaction, updateProfile } from "@/lib/database";
+import { useAuth } from "@/hooks/useAuth";
 import { TrendingUp, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-
-interface Product {
-  id: number;
-  name: string;
-  price: number;
-  dailyIncome: number;
-  validity: number;
-  totalIncome: number;
-  vipLevel: number;
-}
 
 interface InvestDialogProps {
   open: boolean;
@@ -26,6 +17,7 @@ interface InvestDialogProps {
 
 const InvestDialog = ({ open, onOpenChange, product, balance, onSuccess }: InvestDialogProps) => {
   const { toast } = useToast();
+  const { user, profile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -43,46 +35,62 @@ const InvestDialog = ({ open, onOpenChange, product, balance, onSuccess }: Inves
       return;
     }
 
+    if (!user || !profile) {
+      toast({
+        title: "Error",
+        description: "Silakan login terlebih dahulu",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    const user = getCurrentUser();
-    if (!user) return;
+    try {
+      // Deduct balance
+      await updateProfile(user.id, {
+        balance: profile.balance - product.price,
+      });
 
-    // Deduct balance and add investment
-    updateUser({
-      balance: user.balance - product.price,
-      totalInvest: user.totalInvest + product.price,
-    });
+      // Create investment
+      await createInvestment({
+        user_id: user.id,
+        product_id: product.id,
+        product_name: product.name,
+        amount: product.price,
+        daily_income: product.daily_income,
+        total_income: product.total_income,
+        validity: product.validity,
+        days_remaining: product.validity,
+        total_earned: 0,
+        status: 'active',
+      });
 
-    addInvestment({
-      userId: user.id,
-      productId: product.id,
-      productName: product.name,
-      amount: product.price,
-      dailyIncome: product.dailyIncome,
-      validity: product.validity,
-      daysRemaining: product.validity,
-      totalEarned: 0,
-      status: 'active',
-    });
+      // Create transaction record
+      await createTransaction({
+        user_id: user.id,
+        type: 'invest',
+        amount: product.price,
+        status: 'success',
+        description: `Investasi ${product.name}`,
+      });
 
-    addTransaction({
-      userId: user.id,
-      type: 'invest',
-      amount: -product.price,
-      status: 'success',
-      description: `Investasi ${product.name}`,
-    });
+      setIsLoading(false);
+      setSuccess(true);
 
-    setIsLoading(false);
-    setSuccess(true);
-
-    setTimeout(() => {
-      setSuccess(false);
-      onOpenChange(false);
-      onSuccess();
-    }, 2000);
+      setTimeout(() => {
+        setSuccess(false);
+        onOpenChange(false);
+        onSuccess();
+      }, 2000);
+    } catch (error) {
+      setIsLoading(false);
+      toast({
+        title: "Error",
+        description: "Gagal memproses investasi. Silakan coba lagi.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -118,7 +126,7 @@ const InvestDialog = ({ open, onOpenChange, product, balance, onSuccess }: Inves
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <h3 className="font-semibold text-foreground">{product.name}</h3>
-                    <Badge variant="vip" className="text-xs mt-1">VIP {product.vipLevel}</Badge>
+                    <Badge variant="vip" className="text-xs mt-1">VIP {product.vip_level}</Badge>
                   </div>
                   <p className="text-xl font-bold text-primary">{formatCurrency(product.price)}</p>
                 </div>
@@ -126,7 +134,7 @@ const InvestDialog = ({ open, onOpenChange, product, balance, onSuccess }: Inves
                 <div className="space-y-2 pt-3 border-t border-border">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Penghasilan Harian</span>
-                    <span className="font-semibold text-success">{formatCurrency(product.dailyIncome)}</span>
+                    <span className="font-semibold text-success">{formatCurrency(product.daily_income)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Masa Berlaku</span>
@@ -134,12 +142,12 @@ const InvestDialog = ({ open, onOpenChange, product, balance, onSuccess }: Inves
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Total Penghasilan</span>
-                    <span className="font-bold text-accent">{formatCurrency(product.totalIncome)}</span>
+                    <span className="font-bold text-accent">{formatCurrency(product.total_income)}</span>
                   </div>
                   <div className="flex justify-between text-sm pt-2">
                     <span className="text-muted-foreground">ROI</span>
                     <span className="font-bold text-success">
-                      +{((product.totalIncome / product.price - 1) * 100).toFixed(0)}%
+                      +{((product.total_income / product.price - 1) * 100).toFixed(0)}%
                     </span>
                   </div>
                 </div>

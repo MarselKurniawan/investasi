@@ -17,7 +17,7 @@ import {
   AlertTriangle,
   Info
 } from "lucide-react";
-import { Product, formatCurrency } from "@/lib/store";
+import { Product, formatCurrency } from "@/lib/database";
 
 interface ProductDetailDialogProps {
   open: boolean;
@@ -36,8 +36,6 @@ const ProductDetailDialog = ({
 }: ProductDetailDialogProps) => {
   if (!product) return null;
 
-  const stockPercentage = (product.availableStock / product.totalStock) * 100;
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[90vh] p-0 overflow-hidden bg-card border-primary/20">
@@ -45,13 +43,13 @@ const ProductDetailDialog = ({
           {/* Header Image */}
           <div className="relative h-48 overflow-hidden">
             <img
-              src={product.image}
+              src={product.image || '/placeholder.svg'}
               alt={product.name}
               className="w-full h-full object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent" />
             <Badge variant="vip" className="absolute top-4 right-4">
-              VIP {product.vipLevel}
+              VIP {product.vip_level}
             </Badge>
           </div>
 
@@ -61,33 +59,10 @@ const ProductDetailDialog = ({
               <DialogTitle className="text-2xl font-heading font-bold text-foreground">
                 {product.name}
               </DialogTitle>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">{product.series}</p>
-                <p className="text-xs text-primary font-mono">{product.model}</p>
-              </div>
+              {product.description && (
+                <p className="text-sm text-muted-foreground">{product.description}</p>
+              )}
             </DialogHeader>
-
-            {/* Stock Info */}
-            <div className="bg-muted/50 rounded-lg p-3 border border-border/50">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Package className="w-4 h-4 text-primary" />
-                  <span className="text-sm text-muted-foreground">Stok Tersedia</span>
-                </div>
-                <span className={`text-sm font-semibold ${stockPercentage > 50 ? 'text-success' : stockPercentage > 20 ? 'text-accent' : 'text-destructive'}`}>
-                  {stockPercentage.toFixed(0)}%
-                </span>
-              </div>
-              <p className="text-foreground font-medium">
-                {product.availableStock.toLocaleString('id-ID')} stok tersedia dari {product.totalStock.toLocaleString('id-ID')} unit aktif
-              </p>
-              <div className="w-full bg-muted rounded-full h-2 mt-2">
-                <div 
-                  className={`h-2 rounded-full transition-all ${stockPercentage > 50 ? 'bg-success' : stockPercentage > 20 ? 'bg-accent' : 'bg-destructive'}`}
-                  style={{ width: `${stockPercentage}%` }}
-                />
-              </div>
-            </div>
 
             {/* Price & Details */}
             <div className="space-y-3">
@@ -112,7 +87,17 @@ const ProductDetailDialog = ({
                   <span className="text-muted-foreground">Pemakaian harian</span>
                 </div>
                 <span className="font-bold text-success drop-shadow-[0_0_8px_hsl(145,100%,50%)]">
-                  {formatCurrency(product.dailyIncome)}
+                  {formatCurrency(product.daily_income)}
+                </span>
+              </div>
+              <Separator className="bg-border/50" />
+              <div className="flex items-center justify-between py-2">
+                <div className="flex items-center gap-2">
+                  <Package className="w-4 h-4 text-accent" />
+                  <span className="text-muted-foreground">Total penghasilan</span>
+                </div>
+                <span className="font-bold text-accent">
+                  {formatCurrency(product.total_income)}
                 </span>
               </div>
             </div>
