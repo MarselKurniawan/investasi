@@ -9,15 +9,12 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import {
   getCurrentUser,
-  updateUser,
   formatCurrency,
   User,
   getCommissionRate,
 } from "@/lib/store";
 import {
   User as UserIcon,
-  Mail,
-  Phone,
   Crown,
   Shield,
   Edit2,
@@ -26,48 +23,36 @@ import {
   LogOut,
   ChevronRight,
   Lock,
-  Eye,
-  EyeOff,
   Sparkles,
-  BarChart3,
-  Users,
-  Wallet,
   TrendingUp,
   Landmark,
   Settings,
   Share2,
   Headphones,
   Package,
+  Wallet,
 } from "lucide-react";
+import ProfileDialog from "@/components/ProfileDialog";
 
 const Profile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const [activeSection, setActiveSection] = useState<string | null>(null);
+  
+  // Dialog states
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState<"profile" | "password">("profile");
 
   // Bank form
   const [bankName, setBankName] = useState("");
   const [bankAccount, setBankAccount] = useState("");
   const [bankAccountName, setBankAccountName] = useState("");
 
-  // Edit form
-  const [editName, setEditName] = useState("");
-  const [editPhone, setEditPhone] = useState("");
-
-  // Password form
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-
   const loadData = () => {
     const currentUser = getCurrentUser();
     if (currentUser) {
       setUser(currentUser);
-      setEditName(currentUser.name);
-      setEditPhone(currentUser.phone || "");
       // Load bank info from localStorage
       const savedBank = localStorage.getItem(`bank_${currentUser.id}`);
       if (savedBank) {
@@ -82,29 +67,6 @@ const Profile = () => {
   useEffect(() => {
     loadData();
   }, []);
-
-  const handleSaveProfile = () => {
-    if (!editName.trim()) {
-      toast({
-        title: "Error",
-        description: "Nama tidak boleh kosong",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    updateUser({
-      name: editName.trim(),
-      phone: editPhone.trim(),
-    });
-
-    loadData();
-    setActiveSection(null);
-    toast({
-      title: "Profil Diperbarui",
-      description: "Data profil berhasil disimpan",
-    });
-  };
 
   const handleSaveBank = () => {
     if (!user) return;
@@ -131,32 +93,9 @@ const Profile = () => {
     });
   };
 
-  const handleChangePassword = () => {
-    if (newPassword.length < 6) {
-      toast({
-        title: "Error",
-        description: "Password minimal 6 karakter",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Password tidak cocok",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setActiveSection(null);
-    setNewPassword("");
-    setConfirmPassword("");
-    toast({
-      title: "Password Diperbarui",
-      description: "Password baru berhasil disimpan",
-    });
+  const openProfileDialog = (mode: "profile" | "password") => {
+    setDialogMode(mode);
+    setProfileDialogOpen(true);
   };
 
   const handleLogout = () => {
@@ -186,14 +125,14 @@ const Profile = () => {
       icon: Edit2,
       label: "Update Profile",
       description: "Ubah nama dan nomor telepon",
-      action: () => setActiveSection("profile"),
+      action: () => openProfileDialog("profile"),
       color: "text-primary",
     },
     {
       icon: Lock,
       label: "Change Password",
       description: "Ganti password akun Anda",
-      action: () => setActiveSection("password"),
+      action: () => openProfileDialog("password"),
       color: "text-accent",
     },
     {
@@ -333,142 +272,6 @@ const Profile = () => {
         </CardContent>
       </Card>
 
-      {/* Update Profile Section */}
-      {activeSection === "profile" && (
-        <Card className="shadow-card border-primary/20">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Edit2 className="w-5 h-5 text-primary" />
-                Update Profile
-              </CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => setActiveSection(null)}>
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Nama Lengkap</Label>
-              <div className="flex items-center gap-2">
-                <UserIcon className="w-4 h-4 text-muted-foreground" />
-                <Input
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  placeholder="Nama lengkap"
-                  className="bg-muted/50"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Email</Label>
-              <div className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-muted-foreground" />
-                <Input value={user.email} disabled className="bg-muted/50" />
-              </div>
-              <p className="text-xs text-muted-foreground">Email tidak dapat diubah</p>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Nomor Telepon</Label>
-              <div className="flex items-center gap-2">
-                <Phone className="w-4 h-4 text-muted-foreground" />
-                <Input
-                  value={editPhone}
-                  onChange={(e) => setEditPhone(e.target.value)}
-                  placeholder="08xxxxxxxxxx"
-                  className="bg-muted/50"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              <Button className="flex-1" onClick={handleSaveProfile}>
-                <Save className="w-4 h-4 mr-2" />
-                Simpan
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setActiveSection(null);
-                  setEditName(user.name);
-                  setEditPhone(user.phone || "");
-                }}
-              >
-                Batal
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Change Password Section */}
-      {activeSection === "password" && (
-        <Card className="shadow-card border-primary/20">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Lock className="w-5 h-5 text-primary" />
-                Change Password
-              </CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => setActiveSection(null)}>
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Password Baru</Label>
-              <div className="relative">
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Minimal 6 karakter"
-                  className="bg-muted/50"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Konfirmasi Password</Label>
-              <Input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Ulangi password baru"
-                className="bg-muted/50"
-              />
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              <Button className="flex-1" onClick={handleChangePassword}>
-                <Save className="w-4 h-4 mr-2" />
-                Simpan Password
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setActiveSection(null);
-                  setNewPassword("");
-                  setConfirmPassword("");
-                }}
-              >
-                Batal
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Account Bank Section */}
       {activeSection === "bank" && (
         <Card className="shadow-card border-primary/20">
@@ -570,6 +373,14 @@ const Profile = () => {
       <div className="text-center text-xs text-muted-foreground p-4 pb-8">
         <p>🎮 Mode Demo - Data disimpan di browser</p>
       </div>
+
+      {/* Profile Dialog */}
+      <ProfileDialog
+        open={profileDialogOpen}
+        onOpenChange={setProfileDialogOpen}
+        mode={dialogMode}
+        onSuccess={loadData}
+      />
     </div>
   );
 };

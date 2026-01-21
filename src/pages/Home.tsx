@@ -2,13 +2,14 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowUpRight, ArrowDownRight, TrendingUp, Wallet, LogOut, ShieldCheck, Sparkles, Zap } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, TrendingUp, Wallet, LogOut, ShieldCheck, Sparkles, Zap, Ticket } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { getCurrentUser, getInvestments, formatCurrency, User, Investment, getAllProducts, Product } from "@/lib/store";
 import RechargeDialog from "@/components/RechargeDialog";
 import WithdrawDialog from "@/components/WithdrawDialog";
 import InvestDialog from "@/components/InvestDialog";
+import CouponDialog from "@/components/CouponDialog";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ const Home = () => {
   const [rechargeOpen, setRechargeOpen] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [investOpen, setInvestOpen] = useState(false);
+  const [couponOpen, setCouponOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const loadData = () => {
@@ -94,8 +96,9 @@ const Home = () => {
                 <h3 className="text-xl font-heading font-bold text-foreground">Promo Spesial!</h3>
               </div>
               <p className="text-sm text-muted-foreground">Bonus 20% untuk member baru</p>
-              <Button variant="vip" size="sm" className="mt-2 gold-pulse">
-                Klaim Sekarang
+              <Button variant="vip" size="sm" className="mt-2 gold-pulse" onClick={() => setCouponOpen(true)}>
+                <Ticket className="w-4 h-4 mr-1" />
+                Klaim Kupon
               </Button>
             </div>
             <TrendingUp className="w-20 h-20 text-primary/30" />
@@ -261,6 +264,11 @@ const Home = () => {
         onOpenChange={setInvestOpen}
         product={selectedProduct}
         balance={balance}
+        onSuccess={loadData}
+      />
+      <CouponDialog
+        open={couponOpen}
+        onOpenChange={setCouponOpen}
         onSuccess={loadData}
       />
     </div>
