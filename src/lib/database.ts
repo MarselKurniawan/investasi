@@ -471,3 +471,73 @@ export const getTeamMembers = async (referralCode: string): Promise<Profile[]> =
   }
   return data || [];
 };
+
+export const getPendingTransactions = async (): Promise<Transaction[]> => {
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('*')
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching pending transactions:', error);
+    return [];
+  }
+  return data || [];
+};
+
+export const checkIsAdmin = async (userId: string): Promise<boolean> => {
+  const { data, error } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', userId)
+    .eq('role', 'admin')
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error checking admin status:', error);
+    return false;
+  }
+  return !!data;
+};
+
+// Product admin functions
+export const createProduct = async (product: Omit<Product, 'id' | 'created_at'>): Promise<Product | null> => {
+  const { data, error } = await supabase
+    .from('products')
+    .insert(product)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating product:', error);
+    return null;
+  }
+  return data;
+};
+
+export const updateProduct = async (id: string, updates: Partial<Product>): Promise<boolean> => {
+  const { error } = await supabase
+    .from('products')
+    .update(updates)
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error updating product:', error);
+    return false;
+  }
+  return true;
+};
+
+export const deleteProduct = async (id: string): Promise<boolean> => {
+  const { error } = await supabase
+    .from('products')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error deleting product:', error);
+    return false;
+  }
+  return true;
+};
