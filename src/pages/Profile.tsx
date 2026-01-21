@@ -28,10 +28,12 @@ import {
   Package,
   Wallet,
   Ticket,
+  Building2,
 } from "lucide-react";
 import ProfileDialog from "@/components/ProfileDialog";
 import CouponDialog from "@/components/CouponDialog";
 import BankAccountDialog from "@/components/BankAccountDialog";
+import CompanyProfileDialog from "@/components/CompanyProfileDialog";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -43,6 +45,7 @@ const Profile = () => {
   const [dialogMode, setDialogMode] = useState<"profile" | "password">("profile");
   const [couponDialogOpen, setCouponDialogOpen] = useState(false);
   const [bankDialogOpen, setBankDialogOpen] = useState(false);
+  const [companyDialogOpen, setCompanyDialogOpen] = useState(false);
 
   const loadData = () => {
     const currentUser = getCurrentUser();
@@ -131,6 +134,13 @@ const Profile = () => {
       description: "Bagikan kode referral Anda",
       href: "/team",
       color: "text-success",
+    },
+    {
+      icon: Building2,
+      label: "Profil Perusahaan",
+      description: "Informasi tentang InvestPro",
+      action: () => setCompanyDialogOpen(true),
+      color: "text-primary",
     },
     {
       icon: Headphones,
@@ -306,6 +316,12 @@ const Profile = () => {
         open={bankDialogOpen}
         onOpenChange={setBankDialogOpen}
         onSuccess={loadData}
+      />
+
+      {/* Company Profile Dialog */}
+      <CompanyProfileDialog
+        open={companyDialogOpen}
+        onOpenChange={setCompanyDialogOpen}
       />
     </div>
   );

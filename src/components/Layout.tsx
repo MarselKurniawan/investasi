@@ -1,7 +1,11 @@
+import { useState } from "react";
 import { NavLink } from "@/components/NavLink";
-import { Home, Package, Users, UserCircle, BarChart3 } from "lucide-react";
+import { Home, Package, Users, UserCircle, LayoutGrid } from "lucide-react";
+import QuickMenuSheet from "@/components/QuickMenuSheet";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-gradient-background pb-20">
       {/* Decorative background elements */}
@@ -36,14 +40,16 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
             <span className="text-xs">Produk</span>
           </NavLink>
           
-          <NavLink
-            to="/statistics"
-            className="flex flex-col items-center gap-1 px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-            activeClassName="text-primary font-medium drop-shadow-[0_0_8px_hsl(185,100%,50%)]"
+          {/* Center Menu Button - Prominent */}
+          <button
+            onClick={() => setMenuOpen(true)}
+            className="relative flex flex-col items-center gap-1 -mt-6"
           >
-            <BarChart3 className="w-5 h-5" />
-            <span className="text-xs">Statistik</span>
-          </NavLink>
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary via-accent to-vip-gold flex items-center justify-center shadow-glow neon-pulse">
+              <LayoutGrid className="w-7 h-7 text-white" />
+            </div>
+            <span className="text-xs text-primary font-medium">Menu</span>
+          </button>
           
           <NavLink
             to="/team"
@@ -64,6 +70,9 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
           </NavLink>
         </div>
       </nav>
+
+      {/* Quick Menu Sheet */}
+      <QuickMenuSheet open={menuOpen} onOpenChange={setMenuOpen} />
     </div>
   );
 };

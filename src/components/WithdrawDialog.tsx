@@ -3,9 +3,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { addTransaction, updateUser, getCurrentUser, formatCurrency } from "@/lib/store";
-import { ArrowDownRight, Building2, Clock, AlertCircle } from "lucide-react";
+import { ArrowDownRight, Building2, Clock, AlertCircle, Wallet, Check, Landmark } from "lucide-react";
 
 interface WithdrawDialogProps {
   open: boolean;
@@ -14,27 +15,35 @@ interface WithdrawDialogProps {
   onSuccess: () => void;
 }
 
-interface BankData {
-  bankName: string;
-  bankAccount: string;
-  bankAccountName: string;
+interface BankAccount {
+  id: string;
+  type: "bank" | "ewallet";
+  provider: string;
+  accountNumber: string;
+  accountName: string;
 }
+
+const getBankAccounts = (userId: string): BankAccount[] => {
+  const stored = localStorage.getItem(`bank_accounts_${userId}`);
+  return stored ? JSON.parse(stored) : [];
+};
 
 const WithdrawDialog = ({ open, onOpenChange, balance, onSuccess }: WithdrawDialogProps) => {
   const { toast } = useToast();
   const [amount, setAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [bankData, setBankData] = useState<BankData | null>(null);
+  const [accounts, setAccounts] = useState<BankAccount[]>([]);
+  const [selectedAccount, setSelectedAccount] = useState<BankAccount | null>(null);
 
   useEffect(() => {
     if (open) {
       const user = getCurrentUser();
       if (user) {
-        const savedBank = localStorage.getItem(`bank_${user.id}`);
-        if (savedBank) {
-          setBankData(JSON.parse(savedBank));
-        } else {
-          setBankData(null);
+        const savedAccounts = getBankAccounts(user.id);
+        setAccounts(savedAccounts);
+        // Auto-select first account if available
+        if (savedAccounts.length > 0 && !selectedAccount) {
+          setSelectedAccount(savedAccounts[0]);
         }
       }
     }
@@ -60,10 +69,10 @@ const WithdrawDialog = ({ open, onOpenChange, balance, onSuccess }: WithdrawDial
       return;
     }
 
-    if (!bankData) {
+    if (!selectedAccount) {
       toast({
         title: "Error",
-        description: "Silakan atur rekening bank terlebih dahulu di halaman Profile",
+        description: "Silakan pilih rekening tujuan",
         variant: "destructive",
       });
       return;
@@ -86,7 +95,7 @@ const WithdrawDialog = ({ open, onOpenChange, balance, onSuccess }: WithdrawDial
       type: "withdraw",
       amount: amountNum,
       status: "pending",
-      description: `Withdraw ke ${bankData.bankName} - ${bankData.bankAccount} (${bankData.bankAccountName})`,
+      description: `Withdraw ke ${selectedAccount.provider} - ${selectedAccount.accountNumber} (${selectedAccount.accountName})`,
     });
 
     toast({
@@ -96,24 +105,25 @@ const WithdrawDialog = ({ open, onOpenChange, balance, onSuccess }: WithdrawDial
 
     setIsLoading(false);
     setAmount("");
+    setSelectedAccount(null);
     onOpenChange(false);
     onSuccess();
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ArrowDownRight className="w-5 h-5 text-accent" />
             Withdraw Saldo
           </DialogTitle>
           <DialogDescription>
-            Tarik saldo ke rekening bank Anda
+            Tarik saldo ke rekening bank atau e-wallet Anda
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="flex-1 overflow-hidden flex flex-col gap-4 py-4">
           {/* Balance Info */}
           <div className="bg-muted rounded-lg p-4 flex items-center justify-between">
             <div>
@@ -141,37 +151,70 @@ const WithdrawDialog = ({ open, onOpenChange, balance, onSuccess }: WithdrawDial
             />
           </div>
 
-          {/* Bank Details from Profile */}
-          <div className="space-y-3 pt-2 border-t border-border">
+          {/* Account Selection */}
+          <div className="space-y-3 border-t border-border pt-3">
             <div className="flex items-center gap-2 text-sm font-medium">
               <Building2 className="w-4 h-4" />
-              Rekening Tujuan
+              Pilih Rekening Tujuan
             </div>
 
-            {bankData ? (
-              <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Bank</span>
-                  <span className="text-sm font-medium">{bankData.bankName}</span>
+            {accounts.length > 0 ? (
+              <ScrollArea className="max-h-[150px]">
+                <div className="space-y-2 pr-4">
+                  {accounts.map((account) => (
+                    <button
+                      key={account.id}
+                      onClick={() => setSelectedAccount(account)}
+                      className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${
+                        selectedAccount?.id === account.id
+                          ? "border-primary bg-primary/10"
+                          : "border-border/50 bg-muted/50 hover:border-primary/50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                          account.type === "bank" 
+                            ? "bg-primary/20 text-primary" 
+                            : "bg-accent/20 text-accent"
+                        }`}>
+                          {account.type === "bank" ? (
+                            <Landmark className="w-5 h-5" />
+                          ) : (
+                            <Wallet className="w-5 h-5" />
+                          )}
+                        </div>
+                        <div className="text-left">
+                          <p className="font-medium text-sm text-foreground">{account.provider}</p>
+                          <p className="text-xs text-muted-foreground">{account.accountNumber}</p>
+                        </div>
+                      </div>
+                      {selectedAccount?.id === account.id && (
+                        <Check className="w-5 h-5 text-primary" />
+                      )}
+                    </button>
+                  ))}
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">No. Rekening</span>
-                  <span className="text-sm font-medium">{bankData.bankAccount}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Nama</span>
-                  <span className="text-sm font-medium">{bankData.bankAccountName}</span>
-                </div>
-              </div>
+              </ScrollArea>
             ) : (
               <div className="flex items-start gap-2 p-3 bg-destructive/10 rounded-lg">
                 <AlertCircle className="w-4 h-4 text-destructive mt-0.5" />
                 <p className="text-xs text-muted-foreground">
-                  Belum ada data rekening. Silakan atur rekening bank Anda terlebih dahulu di halaman <span className="text-primary font-medium">Profile → Account Bank</span>.
+                  Belum ada rekening tersimpan. Silakan tambahkan rekening di halaman <span className="text-primary font-medium">Profil → Account Bank</span>.
                 </p>
               </div>
             )}
           </div>
+
+          {/* Selected Account Summary */}
+          {selectedAccount && (
+            <div className="bg-success/10 rounded-lg p-3 border border-success/30">
+              <p className="text-xs text-muted-foreground mb-1">Withdraw ke:</p>
+              <p className="font-medium text-sm text-foreground">
+                {selectedAccount.provider} - {selectedAccount.accountNumber}
+              </p>
+              <p className="text-xs text-muted-foreground">{selectedAccount.accountName}</p>
+            </div>
+          )}
 
           {/* Info */}
           <div className="flex items-start gap-2 p-3 bg-accent/10 rounded-lg">
@@ -185,7 +228,7 @@ const WithdrawDialog = ({ open, onOpenChange, balance, onSuccess }: WithdrawDial
             className="w-full"
             size="lg"
             onClick={handleSubmit}
-            disabled={isLoading || !amount || !bankData}
+            disabled={isLoading || !amount || !selectedAccount}
           >
             {isLoading ? "Memproses..." : "Ajukan Withdraw"}
           </Button>
