@@ -23,11 +23,40 @@ const BANKS = [
   { value: "mandiri", label: "Bank Mandiri" },
   { value: "bni", label: "BNI (Bank Negara Indonesia)" },
   { value: "bri", label: "BRI (Bank Rakyat Indonesia)" },
+  { value: "bsi", label: "BSI (Bank Syariah Indonesia)" },
   { value: "cimb", label: "CIMB Niaga" },
   { value: "danamon", label: "Bank Danamon" },
-  { value: "bsi", label: "BSI (Bank Syariah Indonesia)" },
+  { value: "permata", label: "Bank Permata" },
+  { value: "panin", label: "Bank Panin" },
+  { value: "ocbc", label: "OCBC NISP" },
+  { value: "maybank", label: "Maybank Indonesia" },
+  { value: "btpn", label: "Bank BTPN" },
+  { value: "mega", label: "Bank Mega" },
+  { value: "bukopin", label: "Bank KB Bukopin" },
+  { value: "btn", label: "BTN (Bank Tabungan Negara)" },
+  { value: "bjb", label: "Bank BJB (Bank Jabar Banten)" },
+  { value: "dki", label: "Bank DKI" },
+  { value: "jatim", label: "Bank Jatim" },
+  { value: "jateng", label: "Bank Jateng" },
+  { value: "sumut", label: "Bank Sumut" },
   { value: "jago", label: "Bank Jago" },
   { value: "seabank", label: "SeaBank Indonesia" },
+  { value: "blu", label: "Blu by BCA Digital" },
+  { value: "neo", label: "Bank Neo Commerce" },
+  { value: "allo", label: "Allo Bank" },
+  { value: "line", label: "LINE Bank" },
+  { value: "superbank", label: "Superbank" },
+  { value: "hsbc", label: "HSBC Indonesia" },
+  { value: "uob", label: "UOB Indonesia" },
+  { value: "citibank", label: "Citibank Indonesia" },
+  { value: "standard_chartered", label: "Standard Chartered" },
+  { value: "dbs", label: "DBS Indonesia" },
+  { value: "commonwealth", label: "Commonwealth Bank" },
+  { value: "bca_syariah", label: "BCA Syariah" },
+  { value: "muamalat", label: "Bank Muamalat" },
+  { value: "mandiri_syariah", label: "BSM (Bank Syariah Mandiri)" },
+  { value: "bni_syariah", label: "BNI Syariah" },
+  { value: "bri_syariah", label: "BRI Syariah" },
 ];
 
 const EWALLETS = [
@@ -36,6 +65,22 @@ const EWALLETS = [
   { value: "dana", label: "DANA" },
   { value: "shopeepay", label: "ShopeePay" },
   { value: "linkaja", label: "LinkAja" },
+  { value: "isaku", label: "iSaku" },
+  { value: "sakuku", label: "Sakuku" },
+  { value: "doku", label: "DOKU" },
+  { value: "jenius", label: "Jenius Pay" },
+  { value: "gopay_later", label: "GoPayLater" },
+  { value: "kredivo", label: "Kredivo" },
+  { value: "akulaku", label: "Akulaku" },
+  { value: "payfazz", label: "Payfazz" },
+  { value: "octo_mobile", label: "OCTO Mobile" },
+  { value: "livin", label: "Livin' by Mandiri" },
+  { value: "bca_mobile", label: "BCA Mobile" },
+  { value: "brimo", label: "BRImo" },
+  { value: "bni_mobile", label: "BNI Mobile" },
+  { value: "flip", label: "Flip" },
+  { value: "netzme", label: "Netzme" },
+  { value: "qris", label: "QRIS (General)" },
 ];
 
 const BankAccountDialog = ({ open, onOpenChange, onSuccess }: BankAccountDialogProps) => {
@@ -107,13 +152,13 @@ const BankAccountDialog = ({ open, onOpenChange, onSuccess }: BankAccountDialogP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[85vh] overflow-hidden flex flex-col">
+      <DialogContent className="w-[95vw] max-w-md mx-auto max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Landmark className="w-5 h-5 text-primary" />
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Landmark className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
             Account Bank & E-Wallet
           </DialogTitle>
-          <DialogDescription>Kelola rekening untuk penarikan</DialogDescription>
+          <DialogDescription className="text-sm">Kelola rekening untuk penarikan</DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-hidden flex flex-col gap-4">

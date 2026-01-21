@@ -114,13 +114,13 @@ const WithdrawDialog = ({ open, onOpenChange, balance, onSuccess }: WithdrawDial
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[85vh] overflow-hidden flex flex-col">
+      <DialogContent className="w-[95vw] max-w-md mx-auto max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <ArrowDownRight className="w-5 h-5 text-accent" />
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <ArrowDownRight className="w-4 h-4 sm:w-5 sm:h-5 text-accent" />
             Withdraw Saldo
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-sm">
             Tarik saldo ke rekening bank atau e-wallet Anda
           </DialogDescription>
         </DialogHeader>

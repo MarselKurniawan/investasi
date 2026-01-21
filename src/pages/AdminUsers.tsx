@@ -182,17 +182,15 @@ const AdminUsers = () => {
   };
 
   return (
-    <div className="space-y-6 p-4 pt-6">
+    <div className="space-y-6 p-4 pt-6 pb-24">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <Link to="/admin" className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-2">
-            <ChevronLeft className="w-4 h-4" /><span className="text-sm">Kembali ke Admin</span>
-          </Link>
-          <div className="flex items-center gap-2">
-            <UserCog className="w-6 h-6 text-primary" />
-            <h1 className="text-2xl font-heading font-bold text-foreground">Manage Users</h1>
-          </div>
+      <div className="flex flex-col gap-2">
+        <Link to="/admin" className="flex items-center gap-2 text-muted-foreground hover:text-foreground">
+          <ChevronLeft className="w-4 h-4" /><span className="text-sm">Kembali ke Admin</span>
+        </Link>
+        <div className="flex items-center gap-2">
+          <UserCog className="w-6 h-6 text-primary" />
+          <h1 className="text-xl sm:text-2xl font-heading font-bold text-foreground">Manage Users</h1>
         </div>
       </div>
 
@@ -258,18 +256,41 @@ const AdminUsers = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 text-center bg-muted rounded-lg p-3 mb-3">
-                  <div><p className="text-xs text-muted-foreground">Recharge</p><p className="text-sm font-semibold">{formatCurrency(user.total_recharge)}</p></div>
-                  <div><p className="text-xs text-muted-foreground">Pendapatan</p><p className="text-sm font-semibold text-success">{formatCurrency(user.total_income)}</p></div>
-                  <div><p className="text-xs text-muted-foreground">Withdraw</p><p className="text-sm font-semibold text-accent">{formatCurrency(user.total_withdraw)}</p></div>
+                <div className="grid grid-cols-3 gap-1 sm:gap-2 text-center bg-muted rounded-lg p-2 sm:p-3 mb-3">
+                  <div>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">Recharge</p>
+                    <p className="text-xs sm:text-sm font-semibold truncate">{formatCurrency(user.total_recharge)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">Pendapatan</p>
+                    <p className="text-xs sm:text-sm font-semibold text-success truncate">{formatCurrency(user.total_income)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">Withdraw</p>
+                    <p className="text-xs sm:text-sm font-semibold text-accent truncate">{formatCurrency(user.total_withdraw)}</p>
+                  </div>
                 </div>
 
-                <div className="flex gap-2 flex-wrap">
-                  <Button variant="default" size="sm" onClick={() => openUserDetail(user)}><Eye className="w-4 h-4 mr-1" />Detail</Button>
-                  <Button variant="outline" size="sm" onClick={() => openEditUser(user)}><Edit className="w-4 h-4 mr-1" />Edit</Button>
-                  <Button variant="outline" size="sm" onClick={() => openBalanceDialog(user, "add")}><Plus className="w-4 h-4" /></Button>
-                  <Button variant="outline" size="sm" onClick={() => openBalanceDialog(user, "subtract")}><Minus className="w-4 h-4" /></Button>
-                  <select className="px-3 py-1.5 text-sm rounded-md bg-muted border border-border" value={user.vip_level} onChange={(e) => handleUpdateVip(user.user_id, parseInt(e.target.value))}>
+                <div className="flex gap-1.5 sm:gap-2 flex-wrap">
+                  <Button variant="default" size="sm" className="text-xs px-2 sm:px-3" onClick={() => openUserDetail(user)}>
+                    <Eye className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1" />
+                    <span className="hidden sm:inline">Detail</span>
+                  </Button>
+                  <Button variant="outline" size="sm" className="text-xs px-2 sm:px-3" onClick={() => openEditUser(user)}>
+                    <Edit className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1" />
+                    <span className="hidden sm:inline">Edit</span>
+                  </Button>
+                  <Button variant="outline" size="sm" className="px-2" onClick={() => openBalanceDialog(user, "add")}>
+                    <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+                  </Button>
+                  <Button variant="outline" size="sm" className="px-2" onClick={() => openBalanceDialog(user, "subtract")}>
+                    <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
+                  </Button>
+                  <select 
+                    className="px-2 sm:px-3 py-1.5 text-xs sm:text-sm rounded-md bg-muted border border-border" 
+                    value={user.vip_level} 
+                    onChange={(e) => handleUpdateVip(user.user_id, parseInt(e.target.value))}
+                  >
                     {[1, 2, 3, 4, 5].map((level) => <option key={level} value={level}>VIP {level}</option>)}
                   </select>
                 </div>
@@ -281,34 +302,64 @@ const AdminUsers = () => {
 
       {/* Edit User Dialog */}
       <Dialog open={editUserOpen} onOpenChange={setEditUserOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Edit User</DialogTitle><DialogDescription>Ubah informasi user</DialogDescription></DialogHeader>
+        <DialogContent className="w-[95vw] max-w-md mx-auto">
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription>Ubah informasi user</DialogDescription>
+          </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2"><Label>Nama</Label><Input value={editName} onChange={(e) => setEditName(e.target.value)} /></div>
-            <div className="space-y-2"><Label>Telepon</Label><Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} /></div>
+            <div className="space-y-2">
+              <Label>Nama</Label>
+              <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Telepon</Label>
+              <Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} />
+            </div>
           </div>
-          <DialogFooter><Button variant="outline" onClick={() => setEditUserOpen(false)}>Batal</Button><Button onClick={handleSaveUser}>Simpan</Button></DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setEditUserOpen(false)} className="w-full sm:w-auto">Batal</Button>
+            <Button onClick={handleSaveUser} className="w-full sm:w-auto">Simpan</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Balance Dialog */}
       <Dialog open={balanceDialogOpen} onOpenChange={setBalanceDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>{balanceAction === "add" ? "Tambah" : "Kurangi"} Saldo</DialogTitle><DialogDescription>Untuk: {selectedUser?.name}</DialogDescription></DialogHeader>
+        <DialogContent className="w-[95vw] max-w-md mx-auto">
+          <DialogHeader>
+            <DialogTitle>{balanceAction === "add" ? "Tambah" : "Kurangi"} Saldo</DialogTitle>
+            <DialogDescription>Untuk: {selectedUser?.name}</DialogDescription>
+          </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2"><Label>Jumlah</Label><Input type="number" value={balanceAmount} onChange={(e) => setBalanceAmount(e.target.value)} placeholder="Masukkan jumlah" /></div>
+            <div className="space-y-2">
+              <Label>Jumlah</Label>
+              <Input type="number" value={balanceAmount} onChange={(e) => setBalanceAmount(e.target.value)} placeholder="Masukkan jumlah" />
+            </div>
           </div>
-          <DialogFooter><Button variant="outline" onClick={() => setBalanceDialogOpen(false)}>Batal</Button><Button onClick={handleUpdateBalance} className={balanceAction === "subtract" ? "bg-destructive hover:bg-destructive/90" : ""}>{balanceAction === "add" ? "Tambah" : "Kurangi"}</Button></DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setBalanceDialogOpen(false)} className="w-full sm:w-auto">Batal</Button>
+            <Button onClick={handleUpdateBalance} className={`w-full sm:w-auto ${balanceAction === "subtract" ? "bg-destructive hover:bg-destructive/90" : ""}`}>
+              {balanceAction === "add" ? "Tambah" : "Kurangi"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* User Detail Dialog */}
       <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
-        <DialogContent className="max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
-          <DialogHeader><DialogTitle>Detail User: {selectedUser?.name}</DialogTitle></DialogHeader>
+        <DialogContent className="w-[95vw] max-w-lg mx-auto max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="text-base sm:text-lg truncate">Detail: {selectedUser?.name}</DialogTitle>
+          </DialogHeader>
           <Tabs value={detailTab} onValueChange={setDetailTab} className="flex-1 overflow-hidden">
-            <TabsList className="grid grid-cols-4"><TabsTrigger value="overview">Overview</TabsTrigger><TabsTrigger value="referrals">Referral</TabsTrigger><TabsTrigger value="transactions">Transaksi</TabsTrigger><TabsTrigger value="investments">Investasi</TabsTrigger></TabsList>
-            <div className="overflow-y-auto max-h-[50vh] mt-4">
+            <TabsList className="grid grid-cols-4 w-full">
+              <TabsTrigger value="overview" className="text-[10px] sm:text-sm px-1">Overview</TabsTrigger>
+              <TabsTrigger value="referrals" className="text-[10px] sm:text-sm px-1">Referral</TabsTrigger>
+              <TabsTrigger value="transactions" className="text-[10px] sm:text-sm px-1">Transaksi</TabsTrigger>
+              <TabsTrigger value="investments" className="text-[10px] sm:text-sm px-1">Investasi</TabsTrigger>
+            </TabsList>
+            <div className="overflow-y-auto max-h-[45vh] sm:max-h-[50vh] mt-4">
               <TabsContent value="overview" className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-muted p-3 rounded-lg"><p className="text-xs text-muted-foreground">Balance</p><p className="font-bold">{formatCurrency(selectedUser?.balance || 0)}</p></div>
