@@ -40,6 +40,8 @@ import {
   UserCog,
   History,
   Package,
+  Ticket,
+  Copy,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -68,14 +70,50 @@ const Admin = () => {
   const [userTransactions, setUserTransactions] = useState<any[]>([]);
   const [userInvestments, setUserInvestments] = useState<any[]>([]);
 
+  // Coupon dialog
+  const [couponDialogOpen, setCouponDialogOpen] = useState(false);
+  const [coupons, setCoupons] = useState<{ code: string; used: boolean }[]>([]);
+
   const loadData = () => {
     setUsers(getAllUsers());
     setPendingTransactions(getAllPendingTransactions());
+    // Load coupons
+    const storedCoupons = localStorage.getItem("admin_coupons");
+    setCoupons(storedCoupons ? JSON.parse(storedCoupons) : []);
   };
 
   useEffect(() => {
     loadData();
   }, []);
+
+  const generateCoupon = () => {
+    const code = "CPK" + Math.random().toString(36).substring(2, 8).toUpperCase();
+    const newCoupons = [...coupons, { code, used: false }];
+    setCoupons(newCoupons);
+    localStorage.setItem("admin_coupons", JSON.stringify(newCoupons));
+    toast({
+      title: "Kupon Dibuat",
+      description: `Kode: ${code}`,
+    });
+  };
+
+  const deleteCoupon = (code: string) => {
+    const newCoupons = coupons.filter(c => c.code !== code);
+    setCoupons(newCoupons);
+    localStorage.setItem("admin_coupons", JSON.stringify(newCoupons));
+    toast({
+      title: "Kupon Dihapus",
+      description: `Kode ${code} berhasil dihapus`,
+    });
+  };
+
+  const copyToClipboard = (code: string) => {
+    navigator.clipboard.writeText(code);
+    toast({
+      title: "Disalin",
+      description: `Kode ${code} disalin ke clipboard`,
+    });
+  };
 
   const handleApprove = async (userId: string, txId: string) => {
     setIsLoading(txId);
@@ -241,6 +279,10 @@ const Admin = () => {
           <p className="text-sm text-muted-foreground mt-1">Kelola pengguna dan transaksi</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setCouponDialogOpen(true)}>
+            <Ticket className="w-4 h-4 mr-2" />
+            Kupon
+          </Button>
           <Link to="/admin/products">
             <Button variant="outline" size="sm">
               <Package className="w-4 h-4 mr-2" />
@@ -709,6 +751,75 @@ const Admin = () => {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Coupon Dialog */}
+      <Dialog open={couponDialogOpen} onOpenChange={setCouponDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Ticket className="w-5 h-5 text-accent" />
+              Kelola Kupon
+            </DialogTitle>
+            <DialogDescription>
+              Buat dan kelola kode kupon untuk user
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Button onClick={generateCoupon} className="w-full">
+              <Plus className="w-4 h-4 mr-2" />
+              Buat Kupon Baru
+            </Button>
+
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {coupons.length === 0 ? (
+                <p className="text-center text-sm text-muted-foreground py-4">
+                  Belum ada kupon
+                </p>
+              ) : (
+                coupons.map((coupon) => (
+                  <div
+                    key={coupon.code}
+                    className={`flex items-center justify-between p-3 rounded-lg border ${
+                      coupon.used ? "bg-muted/50 border-border" : "bg-accent/10 border-accent/30"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <code className="font-mono font-bold text-lg">{coupon.code}</code>
+                      {coupon.used && (
+                        <Badge variant="secondary" className="text-xs">Terpakai</Badge>
+                      )}
+                    </div>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => copyToClipboard(coupon.code)}
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => deleteCoupon(coupon.code)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="flex items-start gap-2 p-3 bg-accent/10 rounded-lg">
+              <Ticket className="w-4 h-4 text-accent mt-0.5" />
+              <p className="text-xs text-muted-foreground">
+                Setiap kupon memberikan hadiah random antara Rp 100 - Rp 999 dan hanya bisa digunakan sekali.
+              </p>
             </div>
           </div>
         </DialogContent>

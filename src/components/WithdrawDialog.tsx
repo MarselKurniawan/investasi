@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { addTransaction, updateUser, getCurrentUser, formatCurrency } from "@/lib/store";
-import { ArrowDownRight, Building2, CheckCircle } from "lucide-react";
+import { ArrowDownRight, Building2, Clock, AlertCircle } from "lucide-react";
 
 interface WithdrawDialogProps {
   open: boolean;
@@ -14,13 +14,31 @@ interface WithdrawDialogProps {
   onSuccess: () => void;
 }
 
+interface BankData {
+  bankName: string;
+  bankAccount: string;
+  bankAccountName: string;
+}
+
 const WithdrawDialog = ({ open, onOpenChange, balance, onSuccess }: WithdrawDialogProps) => {
   const { toast } = useToast();
   const [amount, setAmount] = useState("");
-  const [bankName, setBankName] = useState("");
-  const [accountNumber, setAccountNumber] = useState("");
-  const [accountName, setAccountName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [bankData, setBankData] = useState<BankData | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      const user = getCurrentUser();
+      if (user) {
+        const savedBank = localStorage.getItem(`bank_${user.id}`);
+        if (savedBank) {
+          setBankData(JSON.parse(savedBank));
+        } else {
+          setBankData(null);
+        }
+      }
+    }
+  }, [open]);
 
   const handleSubmit = async () => {
     const amountNum = parseInt(amount);
@@ -42,10 +60,10 @@ const WithdrawDialog = ({ open, onOpenChange, balance, onSuccess }: WithdrawDial
       return;
     }
 
-    if (!bankName || !accountNumber || !accountName) {
+    if (!bankData) {
       toast({
         title: "Error",
-        description: "Lengkapi data rekening bank",
+        description: "Silakan atur rekening bank terlebih dahulu di halaman Profile",
         variant: "destructive",
       });
       return;
@@ -54,34 +72,30 @@ const WithdrawDialog = ({ open, onOpenChange, balance, onSuccess }: WithdrawDial
     setIsLoading(true);
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    // Auto approve: Deduct balance and update totalWithdraw immediately
+    // Deduct balance immediately but set status to pending for admin approval
     const user = getCurrentUser();
     if (user) {
       updateUser({ 
         balance: user.balance - amountNum,
-        totalWithdraw: user.totalWithdraw + amountNum 
       });
     }
 
-    // Add transaction with success status
+    // Add transaction with pending status - requires admin approval
     addTransaction({
       userId: "",
       type: "withdraw",
       amount: amountNum,
-      status: "success",
-      description: `Withdraw ke ${bankName} - ${accountNumber} (${accountName})`,
+      status: "pending",
+      description: `Withdraw ke ${bankData.bankName} - ${bankData.bankAccount} (${bankData.bankAccountName})`,
     });
 
     toast({
-      title: "Withdraw Berhasil!",
-      description: `${formatCurrency(amountNum)} telah ditransfer ke rekening Anda.`,
+      title: "Permintaan Withdraw Dikirim",
+      description: `${formatCurrency(amountNum)} menunggu persetujuan admin.`,
     });
 
     setIsLoading(false);
     setAmount("");
-    setBankName("");
-    setAccountNumber("");
-    setAccountName("");
     onOpenChange(false);
     onSuccess();
   };
@@ -127,47 +141,43 @@ const WithdrawDialog = ({ open, onOpenChange, balance, onSuccess }: WithdrawDial
             />
           </div>
 
-          {/* Bank Details */}
+          {/* Bank Details from Profile */}
           <div className="space-y-3 pt-2 border-t border-border">
             <div className="flex items-center gap-2 text-sm font-medium">
               <Building2 className="w-4 h-4" />
-              Detail Rekening Bank
+              Rekening Tujuan
             </div>
 
-            <div className="space-y-2">
-              <Label>Nama Bank</Label>
-              <Input
-                placeholder="BCA, BNI, Mandiri, dll"
-                value={bankName}
-                onChange={(e) => setBankName(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Nomor Rekening</Label>
-              <Input
-                type="text"
-                placeholder="Masukkan nomor rekening"
-                value={accountNumber}
-                onChange={(e) => setAccountNumber(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Nama Pemilik Rekening</Label>
-              <Input
-                placeholder="Sesuai buku rekening"
-                value={accountName}
-                onChange={(e) => setAccountName(e.target.value)}
-              />
-            </div>
+            {bankData ? (
+              <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">Bank</span>
+                  <span className="text-sm font-medium">{bankData.bankName}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">No. Rekening</span>
+                  <span className="text-sm font-medium">{bankData.bankAccount}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">Nama</span>
+                  <span className="text-sm font-medium">{bankData.bankAccountName}</span>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-start gap-2 p-3 bg-destructive/10 rounded-lg">
+                <AlertCircle className="w-4 h-4 text-destructive mt-0.5" />
+                <p className="text-xs text-muted-foreground">
+                  Belum ada data rekening. Silakan atur rekening bank Anda terlebih dahulu di halaman <span className="text-primary font-medium">Profile → Account Bank</span>.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Info */}
-          <div className="flex items-start gap-2 p-3 bg-success/10 rounded-lg">
-            <CheckCircle className="w-4 h-4 text-success mt-0.5" />
+          <div className="flex items-start gap-2 p-3 bg-accent/10 rounded-lg">
+            <Clock className="w-4 h-4 text-accent mt-0.5" />
             <p className="text-xs text-muted-foreground">
-              Withdraw diproses otomatis. Pastikan data rekening sudah benar.
+              Withdraw memerlukan persetujuan admin. Proses 1-24 jam kerja.
             </p>
           </div>
 
@@ -175,7 +185,7 @@ const WithdrawDialog = ({ open, onOpenChange, balance, onSuccess }: WithdrawDial
             className="w-full"
             size="lg"
             onClick={handleSubmit}
-            disabled={isLoading || !amount || !bankName || !accountNumber || !accountName}
+            disabled={isLoading || !amount || !bankData}
           >
             {isLoading ? "Memproses..." : "Ajukan Withdraw"}
           </Button>
