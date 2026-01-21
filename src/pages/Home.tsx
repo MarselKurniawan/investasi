@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowUpRight, ArrowDownRight, TrendingUp, Wallet, LogOut, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Wallet, LogOut, ShieldCheck, Sparkles } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { getCurrentUser, getInvestments, formatCurrency, User, Investment, getAllProducts, Product } from "@/lib/store";
+import { useAuth } from "@/hooks/useAuth";
+import { getProducts, getInvestments, formatCurrency, Product, Investment } from "@/lib/database";
 import RechargeDialog from "@/components/RechargeDialog";
 import WithdrawDialog from "@/components/WithdrawDialog";
 import InvestDialog from "@/components/InvestDialog";
@@ -13,28 +14,33 @@ import InvestDialog from "@/components/InvestDialog";
 const Home = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [user, setUser] = useState<User | null>(null);
+  const { user, profile, isAdmin, signOut, refreshProfile } = useAuth();
+  
   const [investments, setInvestments] = useState<Investment[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [rechargeOpen, setRechargeOpen] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [investOpen, setInvestOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  const loadData = () => {
-    const storedUser = getCurrentUser();
-    if (storedUser) {
-      setUser(storedUser);
-      setInvestments(getInvestments(storedUser.id));
+  const loadData = async () => {
+    if (user) {
+      const [investmentsData, productsData] = await Promise.all([
+        getInvestments(user.id),
+        getProducts()
+      ]);
+      setInvestments(investmentsData);
+      setProducts(productsData);
     }
+    await refreshProfile();
   };
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [user]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("demoUser");
-    setUser(null);
+  const handleLogout = async () => {
+    await signOut();
     toast({
       title: "Logout Berhasil",
       description: "Sampai jumpa lagi!",
@@ -42,11 +48,10 @@ const Home = () => {
     navigate("/auth");
   };
 
-  const balance = user?.balance || 0;
-  const vipLevel = user?.vipLevel || 1;
+  const balance = profile?.balance || 0;
+  const vipLevel = profile?.vip_level || 1;
 
-  const allProducts = getAllProducts();
-  const popularProducts = allProducts.slice(0, 2);
+  const popularProducts = products.slice(0, 2);
 
   const handleInvest = (product: Product) => {
     setSelectedProduct(product);
@@ -54,7 +59,7 @@ const Home = () => {
   };
 
   const activeInvestments = investments.filter(i => i.status === 'active');
-  const totalDailyIncome = activeInvestments.reduce((sum, i) => sum + i.dailyIncome, 0);
+  const totalDailyIncome = activeInvestments.reduce((sum, i) => sum + i.daily_income, 0);
 
   return (
     <div className="space-y-6 p-4 pt-6">
@@ -62,7 +67,7 @@ const Home = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-heading font-bold text-foreground">
-            {user ? `Halo, ${user.name}!` : "Selamat Datang!"}
+            {profile ? `Halo, ${profile.name}!` : "Selamat Datang!"}
           </h1>
           <p className="text-sm text-muted-foreground">Kelola investasi Anda dengan mudah</p>
         </div>
@@ -70,7 +75,7 @@ const Home = () => {
           <Badge variant="vip" className="text-sm px-3 py-1 gold-pulse">
             VIP {vipLevel}
           </Badge>
-          {user?.isAdmin && (
+          {isAdmin && (
             <Button variant="ghost" size="icon" onClick={() => navigate("/admin")} className="hover:bg-primary/20">
               <ShieldCheck className="w-5 h-5 text-primary" />
             </Button>
@@ -164,7 +169,7 @@ const Home = () => {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent" />
                 <Badge variant="vip" className="absolute top-3 right-3 text-xs">
-                  VIP {product.vipLevel}
+                  VIP {product.vip_level}
                 </Badge>
               </div>
 
@@ -183,7 +188,7 @@ const Home = () => {
                 <div className="grid grid-cols-3 gap-3 py-3 border-t border-border/50">
                   <div>
                     <p className="text-xs text-muted-foreground mb-1">Harian</p>
-                    <p className="text-sm font-semibold text-success">{formatCurrency(product.dailyIncome)}</p>
+                    <p className="text-sm font-semibold text-success">{formatCurrency(product.daily_income)}</p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground mb-1">Durasi</p>
@@ -191,7 +196,7 @@ const Home = () => {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground mb-1">Total</p>
-                    <p className="text-sm font-semibold text-accent">{formatCurrency(product.totalIncome)}</p>
+                    <p className="text-sm font-semibold text-accent">{formatCurrency(product.total_income)}</p>
                   </div>
                 </div>
 
@@ -210,7 +215,7 @@ const Home = () => {
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground mb-2">Total Income</p>
             <p className="text-xl font-bold text-success drop-shadow-[0_0_8px_hsl(145,100%,50%)]">
-              {formatCurrency(user?.totalIncome || 0)}
+              {formatCurrency(profile?.total_income || 0)}
             </p>
           </CardContent>
         </Card>
@@ -218,7 +223,7 @@ const Home = () => {
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground mb-2">Komisi Referral</p>
             <p className="text-xl font-bold text-primary drop-shadow-[0_0_8px_hsl(185,100%,50%)]">
-              {formatCurrency(user?.teamIncome || 0)}
+              {formatCurrency(profile?.team_income || 0)}
             </p>
           </CardContent>
         </Card>

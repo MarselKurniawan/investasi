@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { getCurrentUser } from "@/lib/store";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -8,27 +7,18 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children, adminOnly = false }: ProtectedRouteProps) => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { user, isAdmin, loading } = useAuth();
   const location = useLocation();
 
-  useEffect(() => {
-    const user = getCurrentUser();
-    setIsAuthenticated(!!user);
-    setIsAdmin(user?.isAdmin || false);
-    setIsLoading(false);
-  }, []);
-
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
+        <div className="animate-pulse text-primary">Memuat...</div>
       </div>
     );
   }
 
-  if (!isAuthenticated) {
+  if (!user) {
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 

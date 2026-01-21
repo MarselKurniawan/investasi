@@ -6,23 +6,28 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { Eye, EyeOff, TrendingUp, Shield, Users, Sparkles, Zap } from "lucide-react";
-import { registerUser, loginUser, getCurrentUser, getAllUsers } from "@/lib/store";
+import { z } from "zod";
+
+const emailSchema = z.string().email("Format email tidak valid");
+const passwordSchema = z.string().min(6, "Password minimal 6 karakter");
 
 const Auth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const { user, loading, signIn, signUp } = useAuth();
+  
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   // Check if already logged in
   useEffect(() => {
-    const user = getCurrentUser();
-    if (user) {
+    if (user && !loading) {
       navigate("/");
     }
-  }, [navigate]);
+  }, [user, loading, navigate]);
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState("");
@@ -37,46 +42,59 @@ const Auth = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    const user = loginUser(loginEmail, loginPassword);
-
-    if (user) {
-      toast({
-        title: "Login Berhasil!",
-        description: "Selamat datang kembali di InvestPro",
-      });
-      navigate("/");
-    } else {
-      // Try to check if user exists
-      const allUsers = getAllUsers();
-      const exists = allUsers.find(u => u.email === loginEmail);
-      
-      if (!exists) {
+    
+    try {
+      emailSchema.parse(loginEmail);
+      passwordSchema.parse(loginPassword);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
         toast({
-          title: "Akun Tidak Ditemukan",
-          description: "Silakan daftar terlebih dahulu",
+          title: "Error",
+          description: error.errors[0].message,
           variant: "destructive",
         });
-      } else {
-        toast({
-          title: "Login Gagal",
-          description: "Email atau password salah",
-          variant: "destructive",
-        });
+        return;
       }
     }
 
+    setIsLoading(true);
+    const { error } = await signIn(loginEmail, loginPassword);
     setIsLoading(false);
+
+    if (error) {
+      toast({
+        title: "Login Gagal",
+        description: error.message === "Invalid login credentials" 
+          ? "Email atau password salah" 
+          : error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Login Berhasil!",
+      description: "Selamat datang kembali di InvestPro",
+    });
+    navigate("/");
   };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    
+    try {
+      emailSchema.parse(registerEmail);
+      passwordSchema.parse(registerPassword);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast({
+          title: "Error",
+          description: error.errors[0].message,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
 
     if (registerPassword !== registerConfirmPassword) {
       toast({
@@ -84,53 +102,49 @@ const Auth = () => {
         description: "Password tidak cocok",
         variant: "destructive",
       });
-      setIsLoading(false);
       return;
     }
 
-    if (registerPassword.length < 6) {
+    if (!registerName.trim()) {
       toast({
         title: "Registrasi Gagal",
-        description: "Password minimal 6 karakter",
+        description: "Nama harus diisi",
         variant: "destructive",
       });
-      setIsLoading(false);
       return;
     }
 
-    // Check if email already exists
-    const allUsers = getAllUsers();
-    if (allUsers.find(u => u.email === registerEmail)) {
-      toast({
-        title: "Registrasi Gagal",
-        description: "Email sudah terdaftar",
-        variant: "destructive",
-      });
-      setIsLoading(false);
-      return;
-    }
-
-    if (registerName && registerEmail && registerPassword) {
-      const user = registerUser(registerName, registerEmail, registerPassword, referralCode || undefined);
-
-      toast({
-        title: "Registrasi Berhasil!",
-        description: user.isAdmin 
-          ? "Akun Admin telah dibuat. Selamat berinvestasi!" 
-          : "Akun Anda telah dibuat. Selamat berinvestasi!",
-      });
-
-      navigate("/");
-    } else {
-      toast({
-        title: "Registrasi Gagal",
-        description: "Mohon lengkapi semua data",
-        variant: "destructive",
-      });
-    }
-
+    setIsLoading(true);
+    const { error } = await signUp(registerEmail, registerPassword, registerName, referralCode || undefined);
     setIsLoading(false);
+
+    if (error) {
+      let errorMessage = error.message;
+      if (error.message.includes("already registered")) {
+        errorMessage = "Email sudah terdaftar. Silakan login.";
+      }
+      toast({
+        title: "Registrasi Gagal",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Registrasi Berhasil!",
+      description: "Akun Anda telah dibuat. Selamat berinvestasi!",
+    });
+    navigate("/");
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-pulse text-primary">Memuat...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex relative overflow-hidden">
@@ -377,7 +391,7 @@ const Auth = () => {
                         type="text"
                         placeholder="Masukkan kode referral"
                         value={referralCode}
-                        onChange={(e) => setReferralCode(e.target.value)}
+                        onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
                         className="bg-muted/50"
                       />
                     </div>
@@ -393,13 +407,6 @@ const Auth = () => {
                   </form>
                 </TabsContent>
               </Tabs>
-
-              {/* Demo notice */}
-              <div className="mt-6 p-3 rounded-lg bg-muted/50 border border-primary/20">
-                <p className="text-xs text-muted-foreground text-center">
-                  🎮 <strong className="text-primary">Mode Demo</strong> - Data disimpan di browser. User pertama otomatis jadi Admin.
-                </p>
-              </div>
             </CardContent>
           </Card>
         </div>
