@@ -32,8 +32,10 @@ import {
   Package,
   Ticket,
   Copy,
+  Database,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import BackupDialog from "@/components/BackupDialog";
 
 interface PendingTx extends Transaction {
   userName?: string;
@@ -47,6 +49,7 @@ const Admin = () => {
   const [pendingTransactions, setPendingTransactions] = useState<PendingTx[]>([]);
   const [isLoading, setIsLoading] = useState<string | null>(null);
   const [couponDialogOpen, setCouponDialogOpen] = useState(false);
+  const [backupDialogOpen, setBackupDialogOpen] = useState(false);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
 
   const loadData = async () => {
@@ -157,6 +160,10 @@ const Admin = () => {
           <p className="text-sm text-muted-foreground mt-1">Kelola pengguna dan transaksi</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" onClick={() => setBackupDialogOpen(true)}>
+            <Database className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Backup</span>
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setCouponDialogOpen(true)}>
             <Ticket className="w-4 h-4 sm:mr-2" />
             <span className="hidden sm:inline">Kupon</span>
@@ -320,6 +327,9 @@ const Admin = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Backup Dialog */}
+      <BackupDialog open={backupDialogOpen} onOpenChange={setBackupDialogOpen} />
     </div>
   );
 };
