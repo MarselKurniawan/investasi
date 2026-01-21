@@ -3,34 +3,37 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Package, TrendingUp, Lock, Sparkles, Eye, Calendar, Zap } from "lucide-react";
-import { getCurrentUser, getAllProducts, formatCurrency, User, Product } from "@/lib/store";
+import { useAuth } from "@/hooks/useAuth";
+import { getProducts, formatCurrency, Product } from "@/lib/database";
 import InvestDialog from "@/components/InvestDialog";
 import ProductDetailDialog from "@/components/ProductDetailDialog";
 
 const ProductPage = () => {
-  const [user, setUser] = useState<User | null>(null);
+  const { user, profile, refreshProfile } = useAuth();
+  const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [investOpen, setInvestOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
 
-  const loadData = () => {
-    setUser(getCurrentUser());
+  const loadData = async () => {
+    const productsData = await getProducts();
+    setProducts(productsData);
+    await refreshProfile();
   };
 
   useEffect(() => {
     loadData();
   }, []);
 
-  const userVipLevel = user?.vipLevel || 1;
-  const balance = user?.balance || 0;
-  const allProducts = getAllProducts();
+  const userVipLevel = profile?.vip_level || 1;
+  const balance = profile?.balance || 0;
 
-  const availableProducts = allProducts.filter(
-    (product) => product.vipLevel <= userVipLevel
+  const availableProducts = products.filter(
+    (product) => product.vip_level <= userVipLevel
   );
 
-  const lockedProducts = allProducts.filter(
-    (product) => product.vipLevel > userVipLevel
+  const lockedProducts = products.filter(
+    (product) => product.vip_level > userVipLevel
   );
 
   const handleViewDetail = (product: Product) => {
@@ -95,7 +98,7 @@ const ProductPage = () => {
                     />
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent to-card/50" />
                     <Badge variant="vip" className="absolute top-2 left-2 text-xs">
-                      VIP {product.vipLevel}
+                      VIP {product.vip_level}
                     </Badge>
                   </div>
 
@@ -105,8 +108,7 @@ const ProductPage = () => {
                       <div className="flex items-start justify-between mb-1">
                         <h3 className="font-semibold text-foreground text-lg leading-tight">{product.name}</h3>
                       </div>
-                      <p className="text-xs text-muted-foreground mb-1">{product.series}</p>
-                      <p className="text-xs text-primary/70 font-mono mb-3">{product.model}</p>
+                      <p className="text-xs text-muted-foreground mb-3">{product.description}</p>
 
                       {/* Price */}
                       <p className="text-xl font-bold text-primary drop-shadow-[0_0_10px_hsl(185,100%,50%)] mb-3">
@@ -119,7 +121,7 @@ const ProductPage = () => {
                           <TrendingUp className="w-3.5 h-3.5 text-success" />
                           <div>
                             <p className="text-[10px] text-muted-foreground">Harian</p>
-                            <p className="text-xs font-bold text-success">{formatCurrency(product.dailyIncome)}</p>
+                            <p className="text-xs font-bold text-success">{formatCurrency(product.daily_income)}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-1.5">
@@ -135,7 +137,7 @@ const ProductPage = () => {
                       <div className="flex items-center gap-1.5 mb-3">
                         <Zap className="w-3.5 h-3.5 text-vip-gold" />
                         <span className="text-xs font-semibold text-vip-gold">
-                          ROI: {((product.totalIncome / product.price - 1) * 100).toFixed(0)}% • Total: {formatCurrency(product.totalIncome)}
+                          ROI: {((product.total_income / product.price - 1) * 100).toFixed(0)}% • Total: {formatCurrency(product.total_income)}
                         </span>
                       </div>
                     </div>
@@ -185,7 +187,7 @@ const ProductPage = () => {
                   <div className="text-center p-4">
                     <Lock className="w-6 h-6 text-vip-gold mx-auto mb-2" />
                     <Badge variant="outline" className="bg-card/80 border-vip-gold text-vip-gold text-xs">
-                      Butuh VIP {product.vipLevel}
+                      Butuh VIP {product.vip_level}
                     </Badge>
                   </div>
                 </div>
@@ -206,7 +208,7 @@ const ProductPage = () => {
                       <h3 className="font-semibold text-foreground text-sm mb-1">{product.name}</h3>
                       <p className="text-sm font-bold text-primary/50">{formatCurrency(product.price)}</p>
                       <p className="text-xs text-success/50 mt-0.5">
-                        +{formatCurrency(product.dailyIncome)}/hari
+                        +{formatCurrency(product.daily_income)}/hari
                       </p>
                     </div>
                   </div>
@@ -235,7 +237,7 @@ const ProductPage = () => {
         open={detailOpen}
         onOpenChange={setDetailOpen}
         product={selectedProduct}
-        userName={user?.name}
+        userName={profile?.name}
         onInvest={handleInvestFromDetail}
       />
 
