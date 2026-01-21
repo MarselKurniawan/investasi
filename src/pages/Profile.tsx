@@ -2,8 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
@@ -18,8 +16,6 @@ import {
   Crown,
   Shield,
   Edit2,
-  Save,
-  X,
   LogOut,
   ChevronRight,
   Lock,
@@ -31,67 +27,33 @@ import {
   Headphones,
   Package,
   Wallet,
+  Ticket,
 } from "lucide-react";
 import ProfileDialog from "@/components/ProfileDialog";
+import CouponDialog from "@/components/CouponDialog";
+import BankAccountDialog from "@/components/BankAccountDialog";
 
 const Profile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
-  const [activeSection, setActiveSection] = useState<string | null>(null);
   
   // Dialog states
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<"profile" | "password">("profile");
-
-  // Bank form
-  const [bankName, setBankName] = useState("");
-  const [bankAccount, setBankAccount] = useState("");
-  const [bankAccountName, setBankAccountName] = useState("");
+  const [couponDialogOpen, setCouponDialogOpen] = useState(false);
+  const [bankDialogOpen, setBankDialogOpen] = useState(false);
 
   const loadData = () => {
     const currentUser = getCurrentUser();
     if (currentUser) {
       setUser(currentUser);
-      // Load bank info from localStorage
-      const savedBank = localStorage.getItem(`bank_${currentUser.id}`);
-      if (savedBank) {
-        const bankData = JSON.parse(savedBank);
-        setBankName(bankData.bankName || "");
-        setBankAccount(bankData.bankAccount || "");
-        setBankAccountName(bankData.bankAccountName || "");
-      }
     }
   };
 
   useEffect(() => {
     loadData();
   }, []);
-
-  const handleSaveBank = () => {
-    if (!user) return;
-    
-    if (!bankName.trim() || !bankAccount.trim() || !bankAccountName.trim()) {
-      toast({
-        title: "Error",
-        description: "Semua field harus diisi",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    localStorage.setItem(`bank_${user.id}`, JSON.stringify({
-      bankName: bankName.trim(),
-      bankAccount: bankAccount.trim(),
-      bankAccountName: bankAccountName.trim(),
-    }));
-
-    setActiveSection(null);
-    toast({
-      title: "Rekening Disimpan",
-      description: "Data rekening bank berhasil disimpan",
-    });
-  };
 
   const openProfileDialog = (mode: "profile" | "password") => {
     setDialogMode(mode);
@@ -152,9 +114,16 @@ const Profile = () => {
     {
       icon: Landmark,
       label: "Account Bank",
-      description: "Kelola rekening bank Anda",
-      action: () => setActiveSection("bank"),
+      description: "Kelola rekening bank & e-wallet",
+      action: () => setBankDialogOpen(true),
       color: "text-primary",
+    },
+    {
+      icon: Ticket,
+      label: "Klaim Kupon",
+      description: "Masukkan kode kupon untuk bonus",
+      action: () => setCouponDialogOpen(true),
+      color: "text-vip-gold",
     },
     {
       icon: Share2,
@@ -272,63 +241,6 @@ const Profile = () => {
         </CardContent>
       </Card>
 
-      {/* Account Bank Section */}
-      {activeSection === "bank" && (
-        <Card className="shadow-card border-primary/20">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Landmark className="w-5 h-5 text-primary" />
-                Account Bank
-              </CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => setActiveSection(null)}>
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Nama Bank</Label>
-              <Input
-                value={bankName}
-                onChange={(e) => setBankName(e.target.value)}
-                placeholder="Contoh: BCA, Mandiri, BNI"
-                className="bg-muted/50"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Nomor Rekening</Label>
-              <Input
-                value={bankAccount}
-                onChange={(e) => setBankAccount(e.target.value)}
-                placeholder="Masukkan nomor rekening"
-                className="bg-muted/50"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Nama Pemilik Rekening</Label>
-              <Input
-                value={bankAccountName}
-                onChange={(e) => setBankAccountName(e.target.value)}
-                placeholder="Nama sesuai rekening"
-                className="bg-muted/50"
-              />
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              <Button className="flex-1" onClick={handleSaveBank}>
-                <Save className="w-4 h-4 mr-2" />
-                Simpan Rekening
-              </Button>
-              <Button variant="outline" onClick={() => setActiveSection(null)}>
-                Batal
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* VIP Info */}
       <Card className="shadow-card border-vip-gold/30">
@@ -379,6 +291,20 @@ const Profile = () => {
         open={profileDialogOpen}
         onOpenChange={setProfileDialogOpen}
         mode={dialogMode}
+        onSuccess={loadData}
+      />
+
+      {/* Coupon Dialog */}
+      <CouponDialog
+        open={couponDialogOpen}
+        onOpenChange={setCouponDialogOpen}
+        onSuccess={loadData}
+      />
+
+      {/* Bank Account Dialog */}
+      <BankAccountDialog
+        open={bankDialogOpen}
+        onOpenChange={setBankDialogOpen}
         onSuccess={loadData}
       />
     </div>

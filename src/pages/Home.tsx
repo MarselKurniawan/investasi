@@ -2,14 +2,13 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowUpRight, ArrowDownRight, TrendingUp, Wallet, LogOut, ShieldCheck, Sparkles, Zap, Ticket } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, TrendingUp, Wallet, LogOut, ShieldCheck, Sparkles } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { getCurrentUser, getInvestments, formatCurrency, User, Investment, getAllProducts, Product } from "@/lib/store";
 import RechargeDialog from "@/components/RechargeDialog";
 import WithdrawDialog from "@/components/WithdrawDialog";
 import InvestDialog from "@/components/InvestDialog";
-import CouponDialog from "@/components/CouponDialog";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -19,7 +18,6 @@ const Home = () => {
   const [rechargeOpen, setRechargeOpen] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [investOpen, setInvestOpen] = useState(false);
-  const [couponOpen, setCouponOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const loadData = () => {
@@ -84,27 +82,6 @@ const Home = () => {
           )}
         </div>
       </div>
-
-      {/* Banner Promo */}
-      <Card className="bg-gradient-to-r from-primary/30 via-accent/20 to-vip-gold/30 border-primary/30 shadow-glow overflow-hidden relative">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-50" />
-        <CardContent className="p-6 relative z-10">
-          <div className="flex items-center justify-between">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Zap className="w-5 h-5 text-vip-gold" />
-                <h3 className="text-xl font-heading font-bold text-foreground">Promo Spesial!</h3>
-              </div>
-              <p className="text-sm text-muted-foreground">Bonus 20% untuk member baru</p>
-              <Button variant="vip" size="sm" className="mt-2 gold-pulse" onClick={() => setCouponOpen(true)}>
-                <Ticket className="w-4 h-4 mr-1" />
-                Klaim Kupon
-              </Button>
-            </div>
-            <TrendingUp className="w-20 h-20 text-primary/30" />
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Balance Card */}
       <Card className="shadow-card border-primary/20 hover:border-primary/40 transition-colors">
@@ -264,11 +241,6 @@ const Home = () => {
         onOpenChange={setInvestOpen}
         product={selectedProduct}
         balance={balance}
-        onSuccess={loadData}
-      />
-      <CouponDialog
-        open={couponOpen}
-        onOpenChange={setCouponOpen}
         onSuccess={loadData}
       />
     </div>
