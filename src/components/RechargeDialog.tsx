@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { addTransaction, updateUser, getCurrentUser, formatCurrency } from "@/lib/store";
-import { ArrowUpRight, CreditCard, Wallet, Building2, CheckCircle } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { createTransaction, updateProfile, formatCurrency } from "@/lib/database";
+import { ArrowUpRight, CreditCard, Wallet, Building2 } from "lucide-react";
 
 interface RechargeDialogProps {
   open: boolean;
@@ -15,6 +16,7 @@ interface RechargeDialogProps {
 
 const RechargeDialog = ({ open, onOpenChange, onSuccess }: RechargeDialogProps) => {
   const { toast } = useToast();
+  const { user, profile } = useAuth();
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -47,37 +49,51 @@ const RechargeDialog = ({ open, onOpenChange, onSuccess }: RechargeDialogProps) 
       return;
     }
 
-    setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    // Auto approve: Update balance immediately
-    const user = getCurrentUser();
-    if (user) {
-      updateUser({ 
-        balance: user.balance + amountNum,
-        totalRecharge: user.totalRecharge + amountNum 
+    if (!user || !profile) {
+      toast({
+        title: "Error",
+        description: "Silakan login terlebih dahulu",
+        variant: "destructive",
       });
+      return;
     }
 
-    // Add transaction with success status
-    addTransaction({
-      userId: "",
-      type: "recharge",
-      amount: amountNum,
-      status: "success",
-      description: `Recharge via ${method}`,
-    });
+    setIsLoading(true);
 
-    toast({
-      title: "Recharge Berhasil!",
-      description: `Saldo ${formatCurrency(amountNum)} telah ditambahkan.`,
-    });
+    try {
+      // Update balance immediately (auto approve for demo)
+      await updateProfile(user.id, {
+        balance: profile.balance + amountNum,
+        total_recharge: profile.total_recharge + amountNum
+      });
 
-    setIsLoading(false);
-    setAmount("");
-    setMethod(null);
-    onOpenChange(false);
-    onSuccess();
+      // Add transaction with success status
+      await createTransaction({
+        user_id: user.id,
+        type: "recharge",
+        amount: amountNum,
+        status: "success",
+        description: `Recharge via ${method}`,
+      });
+
+      toast({
+        title: "Recharge Berhasil!",
+        description: `Saldo ${formatCurrency(amountNum)} telah ditambahkan.`,
+      });
+
+      setAmount("");
+      setMethod(null);
+      onOpenChange(false);
+      onSuccess();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Gagal memproses recharge. Silakan coba lagi.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

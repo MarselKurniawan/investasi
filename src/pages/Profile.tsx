@@ -1,16 +1,12 @@
-import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import {
-  getCurrentUser,
-  formatCurrency,
-  User,
-  getCommissionRate,
-} from "@/lib/store";
+import { useAuth } from "@/hooks/useAuth";
+import { formatCurrency, getCommissionRate } from "@/lib/database";
+import { useState } from "react";
 import {
   User as UserIcon,
   Crown,
@@ -38,7 +34,7 @@ import CompanyProfileDialog from "@/components/CompanyProfileDialog";
 const Profile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [user, setUser] = useState<User | null>(null);
+  const { profile, isAdmin, signOut, refreshProfile } = useAuth();
   
   // Dialog states
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
@@ -47,24 +43,13 @@ const Profile = () => {
   const [bankDialogOpen, setBankDialogOpen] = useState(false);
   const [companyDialogOpen, setCompanyDialogOpen] = useState(false);
 
-  const loadData = () => {
-    const currentUser = getCurrentUser();
-    if (currentUser) {
-      setUser(currentUser);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
   const openProfileDialog = (mode: "profile" | "password") => {
     setDialogMode(mode);
     setProfileDialogOpen(true);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("demoUser");
+  const handleLogout = async () => {
+    await signOut();
     toast({
       title: "Logout Berhasil",
       description: "Sampai jumpa lagi!",
@@ -72,13 +57,13 @@ const Profile = () => {
     navigate("/auth");
   };
 
-  if (!user) return null;
+  if (!profile) return null;
 
-  const commissionRate = getCommissionRate(user.vipLevel);
+  const commissionRate = getCommissionRate(profile.vip_level);
 
   const menuItems = [
     // Admin menu - only show for admin users
-    ...(user.isAdmin ? [{
+    ...(isAdmin ? [{
       icon: Settings,
       label: "Admin Dashboard",
       description: "Kelola platform dan pengguna",
@@ -176,11 +161,11 @@ const Profile = () => {
               <UserIcon className="w-10 h-10 text-foreground" />
             </div>
             <div className="flex-1 pb-2">
-              <h2 className="text-xl font-bold text-foreground">{user.name}</h2>
-              <p className="text-sm text-muted-foreground">{user.email}</p>
+              <h2 className="text-xl font-bold text-foreground">{profile.name}</h2>
+              <p className="text-sm text-muted-foreground">{profile.email}</p>
               <div className="flex items-center gap-2 mt-1">
-                <Badge variant="vip" className="gold-pulse">VIP {user.vipLevel}</Badge>
-                {user.isAdmin && (
+                <Badge variant="vip" className="gold-pulse">VIP {profile.vip_level}</Badge>
+                {isAdmin && (
                   <Badge variant="outline" className="border-primary/50 text-primary">
                     <Shield className="w-3 h-3 mr-1" />
                     Admin
@@ -194,13 +179,13 @@ const Profile = () => {
             <div className="bg-muted/50 rounded-lg p-3 border border-border/50">
               <p className="text-xs text-muted-foreground">Saldo</p>
               <p className="text-lg font-bold text-primary drop-shadow-[0_0_8px_hsl(185,100%,50%)]">
-                {formatCurrency(user.balance)}
+                {formatCurrency(profile.balance)}
               </p>
             </div>
             <div className="bg-muted/50 rounded-lg p-3 border border-border/50">
               <p className="text-xs text-muted-foreground">Total Pendapatan</p>
               <p className="text-lg font-bold text-success drop-shadow-[0_0_8px_hsl(145,100%,50%)]">
-                {formatCurrency(user.totalIncome)}
+                {formatCurrency(profile.total_income)}
               </p>
             </div>
             <div className="bg-muted/50 rounded-lg p-3 border border-border/50">
@@ -212,7 +197,7 @@ const Profile = () => {
             <div className="bg-muted/50 rounded-lg p-3 border border-border/50">
               <p className="text-xs text-muted-foreground">Kode Referral</p>
               <p className="text-lg font-bold text-vip-gold drop-shadow-[0_0_8px_hsl(45,100%,55%)]">
-                {user.referralCode}
+                {profile.referral_code}
               </p>
             </div>
           </div>
@@ -263,7 +248,7 @@ const Profile = () => {
         <CardContent className="space-y-3">
           <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border border-border/50">
             <span className="text-sm">Level Anda</span>
-            <Badge variant="vip" className="gold-pulse">VIP {user.vipLevel}</Badge>
+            <Badge variant="vip" className="gold-pulse">VIP {profile.vip_level}</Badge>
           </div>
           <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border border-border/50">
             <span className="text-sm">Komisi Referral</span>
@@ -291,31 +276,26 @@ const Profile = () => {
         </CardContent>
       </Card>
 
-      {/* Demo Notice */}
-      <div className="text-center text-xs text-muted-foreground p-4 pb-8">
-        <p>🎮 Mode Demo - Data disimpan di browser</p>
-      </div>
-
       {/* Profile Dialog */}
       <ProfileDialog
         open={profileDialogOpen}
         onOpenChange={setProfileDialogOpen}
         mode={dialogMode}
-        onSuccess={loadData}
+        onSuccess={refreshProfile}
       />
 
       {/* Coupon Dialog */}
       <CouponDialog
         open={couponDialogOpen}
         onOpenChange={setCouponDialogOpen}
-        onSuccess={loadData}
+        onSuccess={refreshProfile}
       />
 
       {/* Bank Account Dialog */}
       <BankAccountDialog
         open={bankDialogOpen}
         onOpenChange={setBankDialogOpen}
-        onSuccess={loadData}
+        onSuccess={refreshProfile}
       />
 
       {/* Company Profile Dialog */}
