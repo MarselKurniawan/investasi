@@ -146,25 +146,32 @@ const Admin = () => {
   };
 
   return (
-    <div className="space-y-6 p-4 pt-6">
+    <div className="space-y-6 p-4 pt-6 pb-24">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-6 h-6 text-primary" />
-            <h1 className="text-2xl font-heading font-bold text-foreground">Admin Panel</h1>
+            <h1 className="text-xl sm:text-2xl font-heading font-bold text-foreground">Admin Panel</h1>
           </div>
           <p className="text-sm text-muted-foreground mt-1">Kelola pengguna dan transaksi</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={() => setCouponDialogOpen(true)}>
-            <Ticket className="w-4 h-4 mr-2" />Kupon
+            <Ticket className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Kupon</span>
           </Button>
           <Link to="/admin/products">
-            <Button variant="outline" size="sm"><Package className="w-4 h-4 mr-2" />Produk</Button>
+            <Button variant="outline" size="sm">
+              <Package className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Produk</span>
+            </Button>
           </Link>
           <Link to="/admin/users">
-            <Button variant="default" size="sm"><UserCog className="w-4 h-4 mr-2" />Users</Button>
+            <Button variant="default" size="sm">
+              <UserCog className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Users</span>
+            </Button>
           </Link>
         </div>
       </div>
@@ -281,7 +288,7 @@ const Admin = () => {
 
       {/* Coupon Dialog */}
       <Dialog open={couponDialogOpen} onOpenChange={setCouponDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="w-[95vw] max-w-md mx-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><Ticket className="w-5 h-5 text-primary" />Kelola Kupon</DialogTitle>
           </DialogHeader>
