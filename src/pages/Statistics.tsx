@@ -1,17 +1,8 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  getCurrentUser,
-  getInvestments,
-  getTransactions,
-  getIncomeStats,
-  getInvestmentDistribution,
-  formatCurrency,
-  User,
-  Investment,
-  Transaction,
-} from "@/lib/store";
+import { useAuth } from "@/hooks/useAuth";
+import { getInvestments, getTransactions, formatCurrency, Investment, Transaction } from "@/lib/database";
 import {
   BarChart,
   Bar,
@@ -34,43 +25,81 @@ import {
   Activity,
   Wallet,
   ArrowUpRight,
-  ArrowDownRight,
 } from "lucide-react";
 
 const COLORS = ["hsl(192, 75%, 38%)", "hsl(45, 93%, 58%)", "hsl(145, 65%, 45%)", "hsl(25, 95%, 58%)", "hsl(280, 65%, 55%)"];
 
 const Statistics = () => {
-  const [user, setUser] = useState<User | null>(null);
+  const { user, profile } = useAuth();
   const [investments, setInvestments] = useState<Investment[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [incomeStats, setIncomeStats] = useState<{ date: string; income: number; commission: number }[]>([]);
-  const [investmentDist, setInvestmentDist] = useState<{ name: string; value: number }[]>([]);
+
+  const loadData = async () => {
+    if (user) {
+      const [invData, txData] = await Promise.all([
+        getInvestments(user.id),
+        getTransactions(user.id)
+      ]);
+      setInvestments(invData);
+      setTransactions(txData);
+    }
+  };
 
   useEffect(() => {
-    const currentUser = getCurrentUser();
-    if (currentUser) {
-      setUser(currentUser);
-      setInvestments(getInvestments(currentUser.id));
-      setTransactions(getTransactions(currentUser.id));
-      setIncomeStats(getIncomeStats(currentUser.id));
-      setInvestmentDist(getInvestmentDistribution(currentUser.id));
-    }
-  }, []);
+    loadData();
+  }, [user]);
 
   const activeInvestments = investments.filter((i) => i.status === "active");
-  const totalDailyIncome = activeInvestments.reduce((sum, i) => sum + i.dailyIncome, 0);
+  const totalDailyIncome = activeInvestments.reduce((sum, i) => sum + i.daily_income, 0);
   const totalInvested = investments.reduce((sum, i) => sum + i.amount, 0);
 
-  const successTx = transactions.filter((t) => t.status === "success");
-  const totalIncome = successTx.filter((t) => t.type === "income").reduce((sum, t) => sum + t.amount, 0);
-  const totalCommission = successTx.filter((t) => t.type === "commission").reduce((sum, t) => sum + t.amount, 0);
+  // Calculate income stats from transactions (last 7 days)
+  const getIncomeStats = () => {
+    const stats: { date: string; income: number; commission: number }[] = [];
+    const now = new Date();
+    
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(now);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+      
+      const dayTransactions = transactions.filter(t => {
+        const txDate = new Date(t.created_at);
+        return txDate.toDateString() === date.toDateString() && t.status === 'success';
+      });
+      
+      const income = dayTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+      const commission = dayTransactions.filter(t => t.type === 'commission').reduce((sum, t) => sum + t.amount, 0);
+      
+      stats.push({ date: dateStr, income, commission });
+    }
+    
+    return stats;
+  };
+
+  // Calculate investment distribution
+  const getInvestmentDistribution = () => {
+    const distribution: Record<string, number> = {};
+    
+    investments.forEach(inv => {
+      if (!distribution[inv.product_name]) {
+        distribution[inv.product_name] = 0;
+      }
+      distribution[inv.product_name] += inv.amount;
+    });
+    
+    return Object.entries(distribution).map(([name, value]) => ({ name, value }));
+  };
+
+  const incomeStats = getIncomeStats();
+  const investmentDist = getInvestmentDistribution();
 
   const monthlyData = [
     { month: "Jan", value: 0 },
     { month: "Feb", value: 0 },
     { month: "Mar", value: 0 },
     { month: "Apr", value: 0 },
-    { month: "Mei", value: user?.totalIncome || 0 },
+    { month: "Mei", value: profile?.total_income || 0 },
   ];
 
   return (
@@ -99,7 +128,7 @@ const Statistics = () => {
               <TrendingUp className="w-4 h-4 text-success" />
               <p className="text-xs text-muted-foreground">Total Pendapatan</p>
             </div>
-            <p className="text-xl font-bold text-success">{formatCurrency(user?.totalIncome || 0)}</p>
+            <p className="text-xl font-bold text-success">{formatCurrency(profile?.total_income || 0)}</p>
           </CardContent>
         </Card>
 
@@ -119,7 +148,7 @@ const Statistics = () => {
               <Activity className="w-4 h-4 text-accent" />
               <p className="text-xs text-muted-foreground">Komisi Referral</p>
             </div>
-            <p className="text-xl font-bold text-accent">{formatCurrency(user?.teamIncome || 0)}</p>
+            <p className="text-xl font-bold text-accent">{formatCurrency(profile?.team_income || 0)}</p>
           </CardContent>
         </Card>
       </div>
@@ -261,7 +290,7 @@ const Statistics = () => {
           <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
             <span className="text-sm text-muted-foreground">ROI</span>
             <span className="font-semibold text-success">
-              {totalInvested > 0 ? `+${(((user?.totalIncome || 0) / totalInvested) * 100).toFixed(1)}%` : "0%"}
+              {totalInvested > 0 ? `+${(((profile?.total_income || 0) / totalInvested) * 100).toFixed(1)}%` : "0%"}
             </span>
           </div>
         </CardContent>

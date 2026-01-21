@@ -4,23 +4,28 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Users, TrendingUp, Share2, Crown, Award } from "lucide-react";
-import { getCurrentUser, getTeamMembers, formatCurrency, User, TeamMember } from "@/lib/store";
+import { useAuth } from "@/hooks/useAuth";
+import { getTeamMembers, formatCurrency, Profile } from "@/lib/database";
 import ReferralDialog from "@/components/ReferralDialog";
 
 const Team = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const { profile, refreshProfile } = useAuth();
+  const [teamMembers, setTeamMembers] = useState<Profile[]>([]);
   const [referralOpen, setReferralOpen] = useState(false);
 
-  useEffect(() => {
-    const currentUser = getCurrentUser();
-    if (currentUser) {
-      setUser(currentUser);
-      setTeamMembers(getTeamMembers(currentUser.id));
+  const loadData = async () => {
+    if (profile?.referral_code) {
+      const members = await getTeamMembers(profile.referral_code);
+      setTeamMembers(members);
     }
-  }, []);
+    await refreshProfile();
+  };
 
-  const currentVipLevel = user?.vipLevel || 1;
+  useEffect(() => {
+    loadData();
+  }, [profile?.referral_code]);
+
+  const currentVipLevel = profile?.vip_level || 1;
   const totalReferrals = teamMembers.length;
 
   // VIP requirements
@@ -63,9 +68,8 @@ const Team = () => {
   ];
 
   const referralStats = {
-    totalEarnings: user?.teamIncome || 0,
-    activeMembers: teamMembers.filter(m => m.status === 'active').length,
-    pendingMembers: teamMembers.filter(m => m.status === 'pending').length,
+    totalEarnings: profile?.team_income || 0,
+    activeMembers: teamMembers.length,
   };
 
   return (
@@ -126,7 +130,7 @@ const Team = () => {
       </Card>
 
       {/* Referral Stats */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <Card className="shadow-card">
           <CardContent className="p-4 text-center">
             <p className="text-xs text-muted-foreground mb-2">Total Komisi</p>
@@ -135,14 +139,8 @@ const Team = () => {
         </Card>
         <Card className="shadow-card">
           <CardContent className="p-4 text-center">
-            <p className="text-xs text-muted-foreground mb-2">Anggota Aktif</p>
+            <p className="text-xs text-muted-foreground mb-2">Total Anggota</p>
             <p className="text-base font-bold text-primary">{referralStats.activeMembers}</p>
-          </CardContent>
-        </Card>
-        <Card className="shadow-card">
-          <CardContent className="p-4 text-center">
-            <p className="text-xs text-muted-foreground mb-2">Pending</p>
-            <p className="text-base font-bold text-accent">{referralStats.pendingMembers}</p>
           </CardContent>
         </Card>
       </div>
@@ -239,12 +237,11 @@ const Team = () => {
                   <div>
                     <p className="font-semibold text-sm text-foreground">{member.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      VIP {member.vipLevel} • {member.status === 'active' ? 'Aktif' : 'Pending'}
+                      VIP {member.vip_level} • Bergabung {new Date(member.created_at).toLocaleDateString('id-ID')}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-bold text-success">{formatCurrency(member.totalEarnings)}</p>
-                    <p className="text-xs text-muted-foreground">Total Komisi</p>
+                    <Badge variant="success" className="text-xs">Aktif</Badge>
                   </div>
                 </div>
               ))}
@@ -271,7 +268,7 @@ const Team = () => {
       <ReferralDialog
         open={referralOpen}
         onOpenChange={setReferralOpen}
-        referralCode={user?.referralCode || ''}
+        referralCode={profile?.referral_code || ''}
       />
     </div>
   );

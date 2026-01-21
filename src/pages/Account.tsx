@@ -13,36 +13,38 @@ import {
   Package,
   Sparkles,
 } from "lucide-react";
-import { getCurrentUser, getTransactions, getInvestments, formatCurrency, canClaimToday, claimDailyIncome, User, Transaction, Investment } from "@/lib/store";
+import { useAuth } from "@/hooks/useAuth";
+import { getTransactions, getInvestments, updateInvestment, updateProfile, createTransaction, formatCurrency, canClaimToday, Transaction, Investment } from "@/lib/database";
 import ClaimRewardDialog from "@/components/ClaimRewardDialog";
 
 const Account = () => {
-  const [user, setUser] = useState<User | null>(null);
+  const { user, profile, refreshProfile } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [investments, setInvestments] = useState<Investment[]>([]);
   const [claimDialogOpen, setClaimDialogOpen] = useState(false);
   const [selectedInvestment, setSelectedInvestment] = useState<Investment | null>(null);
 
-  const refreshData = () => {
-    const currentUser = getCurrentUser();
-    if (currentUser) {
-      setUser(currentUser);
-      setTransactions(getTransactions(currentUser.id));
-      setInvestments(getInvestments(currentUser.id));
+  const refreshData = async () => {
+    if (user) {
+      const [txData, invData] = await Promise.all([
+        getTransactions(user.id),
+        getInvestments(user.id)
+      ]);
+      setTransactions(txData);
+      setInvestments(invData);
+      await refreshProfile();
     }
   };
 
   useEffect(() => {
     refreshData();
-  }, []);
+  }, [user]);
 
   const monitoringData = {
-    totalIncome: user?.totalIncome || 0,
-    totalRecharge: user?.totalRecharge || 0,
-    totalInvest: user?.totalInvest || 0,
-    totalWithdraw: user?.totalWithdraw || 0,
-    totalRabat: user?.totalRabat || 0,
-    teamIncome: user?.teamIncome || 0,
+    totalIncome: profile?.total_income || 0,
+    totalRecharge: profile?.total_recharge || 0,
+    totalWithdraw: profile?.total_withdraw || 0,
+    teamIncome: profile?.team_income || 0,
   };
 
   const getTransactionIcon = (type: string) => {
@@ -93,12 +95,39 @@ const Account = () => {
     setClaimDialogOpen(true);
   };
 
-  const handleClaim = () => {
-    if (!selectedInvestment) return;
+  const handleClaim = async () => {
+    if (!selectedInvestment || !user || !profile) return;
     
-    const result = claimDailyIncome(selectedInvestment.id);
-    if (result.success) {
-      refreshData();
+    try {
+      // Update investment
+      const newTotalEarned = selectedInvestment.total_earned + selectedInvestment.daily_income;
+      const newDaysRemaining = selectedInvestment.days_remaining - 1;
+      
+      await updateInvestment(selectedInvestment.id, {
+        total_earned: newTotalEarned,
+        days_remaining: newDaysRemaining,
+        last_claimed_at: new Date().toISOString(),
+        status: newDaysRemaining <= 0 ? 'completed' : 'active'
+      });
+
+      // Update profile balance and total income
+      await updateProfile(user.id, {
+        balance: profile.balance + selectedInvestment.daily_income,
+        total_income: profile.total_income + selectedInvestment.daily_income
+      });
+
+      // Create transaction record
+      await createTransaction({
+        user_id: user.id,
+        type: 'income',
+        amount: selectedInvestment.daily_income,
+        status: 'success',
+        description: `Income harian dari ${selectedInvestment.product_name}`
+      });
+
+      await refreshData();
+    } catch (error) {
+      console.error('Error claiming income:', error);
     }
   };
 
@@ -139,35 +168,11 @@ const Account = () => {
           <Card className="shadow-card">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Wallet className="w-4 h-4 text-primary" />
-                <p className="text-xs font-medium text-muted-foreground">Total Invest</p>
-              </div>
-              <p className="text-xl font-bold text-foreground">
-                {formatCurrency(monitoringData.totalInvest)}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-card">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
                 <ArrowDownRight className="w-4 h-4 text-accent" />
                 <p className="text-xs font-medium text-muted-foreground">Total Withdraw</p>
               </div>
               <p className="text-xl font-bold text-foreground">
                 {formatCurrency(monitoringData.totalWithdraw)}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-card">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Gift className="w-4 h-4 text-accent" />
-                <p className="text-xs font-medium text-muted-foreground">Total Rabat</p>
-              </div>
-              <p className="text-xl font-bold text-foreground">
-                {formatCurrency(monitoringData.totalRabat)}
               </p>
             </CardContent>
           </Card>
@@ -195,14 +200,14 @@ const Account = () => {
           </CardHeader>
           <CardContent className="space-y-3">
             {activeInvestments.map((inv) => {
-              const canClaim = canClaimToday(inv);
+              const canClaim = canClaimToday(inv.last_claimed_at);
               return (
                 <div key={inv.id} className="bg-muted rounded-lg p-4">
                   <div className="flex items-start justify-between mb-2">
                     <div>
-                      <p className="font-semibold text-foreground">{inv.productName}</p>
+                      <p className="font-semibold text-foreground">{inv.product_name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {inv.daysRemaining} hari tersisa
+                        {inv.days_remaining} hari tersisa
                       </p>
                     </div>
                     <Badge variant="success" className="text-xs">Aktif</Badge>
@@ -214,11 +219,11 @@ const Account = () => {
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Harian</p>
-                      <p className="text-sm font-semibold text-success">{formatCurrency(inv.dailyIncome)}</p>
+                      <p className="text-sm font-semibold text-success">{formatCurrency(inv.daily_income)}</p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Earned</p>
-                      <p className="text-sm font-semibold text-accent">{formatCurrency(inv.totalEarned)}</p>
+                      <p className="text-sm font-semibold text-accent">{formatCurrency(inv.total_earned)}</p>
                     </div>
                   </div>
                   {/* Claim Button */}
@@ -229,7 +234,7 @@ const Account = () => {
                         className="w-full bg-gradient-to-r from-success to-primary hover:from-success/90 hover:to-primary/90 text-primary-foreground font-semibold shadow-lg shadow-success/30 neon-pulse"
                       >
                         <Gift className="w-4 h-4 mr-2" />
-                        Claim {formatCurrency(inv.dailyIncome)}
+                        Claim {formatCurrency(inv.daily_income)}
                         <Sparkles className="w-4 h-4 ml-2" />
                       </Button>
                     ) : (
@@ -283,18 +288,18 @@ const Account = () => {
                           {getTransactionLabel(transaction.type)}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {new Date(transaction.date).toLocaleDateString("id-ID")}
+                          {new Date(transaction.created_at).toLocaleDateString("id-ID")}
                         </p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p
                         className={`text-sm font-bold ${
-                          transaction.amount > 0 ? "text-success" : "text-foreground"
+                          transaction.type === 'recharge' || transaction.type === 'income' || transaction.type === 'commission' ? "text-success" : "text-foreground"
                         }`}
                       >
-                        {transaction.amount > 0 ? "+" : ""}
-                        {formatCurrency(Math.abs(transaction.amount))}
+                        {transaction.type === 'recharge' || transaction.type === 'income' || transaction.type === 'commission' ? "+" : "-"}
+                        {formatCurrency(transaction.amount)}
                       </p>
                       <Badge
                         variant={getStatusVariant(transaction.status) as any}
@@ -331,7 +336,7 @@ const Account = () => {
                             {getTransactionLabel(transaction.type)}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {new Date(transaction.date).toLocaleDateString("id-ID")}
+                            {new Date(transaction.created_at).toLocaleDateString("id-ID")}
                           </p>
                         </div>
                       </div>
@@ -374,13 +379,13 @@ const Account = () => {
                             {getTransactionLabel(transaction.type)}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {new Date(transaction.date).toLocaleDateString("id-ID")}
+                            {new Date(transaction.created_at).toLocaleDateString("id-ID")}
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-bold text-foreground">
-                          {formatCurrency(transaction.amount)}
+                          -{formatCurrency(transaction.amount)}
                         </p>
                         <Badge
                           variant={getStatusVariant(transaction.status) as any}
@@ -401,8 +406,8 @@ const Account = () => {
       <ClaimRewardDialog
         open={claimDialogOpen}
         onOpenChange={setClaimDialogOpen}
-        amount={selectedInvestment?.dailyIncome || 0}
-        productName={selectedInvestment?.productName || ""}
+        amount={selectedInvestment?.daily_income || 0}
+        productName={selectedInvestment?.product_name || ""}
         onClaim={handleClaim}
       />
     </div>

@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { addTransaction, updateUser, getCurrentUser, formatCurrency } from "@/lib/store";
+import { useAuth } from "@/hooks/useAuth";
+import { createTransaction, updateProfile, getBankAccounts, formatCurrency, BankAccount } from "@/lib/database";
 import { ArrowDownRight, Building2, Clock, AlertCircle, Wallet, Check, Landmark } from "lucide-react";
 
 interface WithdrawDialogProps {
@@ -15,39 +16,26 @@ interface WithdrawDialogProps {
   onSuccess: () => void;
 }
 
-interface BankAccount {
-  id: string;
-  type: "bank" | "ewallet";
-  provider: string;
-  accountNumber: string;
-  accountName: string;
-}
-
-const getBankAccounts = (userId: string): BankAccount[] => {
-  const stored = localStorage.getItem(`bank_accounts_${userId}`);
-  return stored ? JSON.parse(stored) : [];
-};
-
 const WithdrawDialog = ({ open, onOpenChange, balance, onSuccess }: WithdrawDialogProps) => {
   const { toast } = useToast();
+  const { user, profile } = useAuth();
   const [amount, setAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [accounts, setAccounts] = useState<BankAccount[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<BankAccount | null>(null);
 
   useEffect(() => {
-    if (open) {
-      const user = getCurrentUser();
-      if (user) {
-        const savedAccounts = getBankAccounts(user.id);
+    const loadAccounts = async () => {
+      if (open && user) {
+        const savedAccounts = await getBankAccounts(user.id);
         setAccounts(savedAccounts);
-        // Auto-select first account if available
         if (savedAccounts.length > 0 && !selectedAccount) {
           setSelectedAccount(savedAccounts[0]);
         }
       }
-    }
-  }, [open]);
+    };
+    loadAccounts();
+  }, [open, user]);
 
   const handleSubmit = async () => {
     const amountNum = parseInt(amount);
@@ -78,36 +66,50 @@ const WithdrawDialog = ({ open, onOpenChange, balance, onSuccess }: WithdrawDial
       return;
     }
 
-    setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    // Deduct balance immediately but set status to pending for admin approval
-    const user = getCurrentUser();
-    if (user) {
-      updateUser({ 
-        balance: user.balance - amountNum,
+    if (!user || !profile) {
+      toast({
+        title: "Error",
+        description: "Silakan login terlebih dahulu",
+        variant: "destructive",
       });
+      return;
     }
 
-    // Add transaction with pending status - requires admin approval
-    addTransaction({
-      userId: "",
-      type: "withdraw",
-      amount: amountNum,
-      status: "pending",
-      description: `Withdraw ke ${selectedAccount.provider} - ${selectedAccount.accountNumber} (${selectedAccount.accountName})`,
-    });
+    setIsLoading(true);
 
-    toast({
-      title: "Permintaan Withdraw Dikirim",
-      description: `${formatCurrency(amountNum)} menunggu persetujuan admin.`,
-    });
+    try {
+      // Deduct balance immediately
+      await updateProfile(user.id, {
+        balance: profile.balance - amountNum,
+      });
 
-    setIsLoading(false);
-    setAmount("");
-    setSelectedAccount(null);
-    onOpenChange(false);
-    onSuccess();
+      // Add transaction with pending status - requires admin approval
+      await createTransaction({
+        user_id: user.id,
+        type: "withdraw",
+        amount: amountNum,
+        status: "pending",
+        description: `Withdraw ke ${selectedAccount.provider} - ${selectedAccount.account_number} (${selectedAccount.account_name})`,
+      });
+
+      toast({
+        title: "Permintaan Withdraw Dikirim",
+        description: `${formatCurrency(amountNum)} menunggu persetujuan admin.`,
+      });
+
+      setAmount("");
+      setSelectedAccount(null);
+      onOpenChange(false);
+      onSuccess();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Gagal memproses withdraw. Silakan coba lagi.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -173,11 +175,11 @@ const WithdrawDialog = ({ open, onOpenChange, balance, onSuccess }: WithdrawDial
                     >
                       <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                          account.type === "bank" 
+                          account.account_type === "bank" 
                             ? "bg-primary/20 text-primary" 
                             : "bg-accent/20 text-accent"
                         }`}>
-                          {account.type === "bank" ? (
+                          {account.account_type === "bank" ? (
                             <Landmark className="w-5 h-5" />
                           ) : (
                             <Wallet className="w-5 h-5" />
@@ -185,7 +187,7 @@ const WithdrawDialog = ({ open, onOpenChange, balance, onSuccess }: WithdrawDial
                         </div>
                         <div className="text-left">
                           <p className="font-medium text-sm text-foreground">{account.provider}</p>
-                          <p className="text-xs text-muted-foreground">{account.accountNumber}</p>
+                          <p className="text-xs text-muted-foreground">{account.account_number}</p>
                         </div>
                       </div>
                       {selectedAccount?.id === account.id && (
@@ -210,9 +212,9 @@ const WithdrawDialog = ({ open, onOpenChange, balance, onSuccess }: WithdrawDial
             <div className="bg-success/10 rounded-lg p-3 border border-success/30">
               <p className="text-xs text-muted-foreground mb-1">Withdraw ke:</p>
               <p className="font-medium text-sm text-foreground">
-                {selectedAccount.provider} - {selectedAccount.accountNumber}
+                {selectedAccount.provider} - {selectedAccount.account_number}
               </p>
-              <p className="text-xs text-muted-foreground">{selectedAccount.accountName}</p>
+              <p className="text-xs text-muted-foreground">{selectedAccount.account_name}</p>
             </div>
           )}
 
