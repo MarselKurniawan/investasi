@@ -442,19 +442,35 @@ export const getAllPendingTransactions = (): (Transaction & { userName: string; 
 
 // Approve/reject transaction (admin)
 export const updateTransactionStatus = (userId: string, transactionId: string, status: 'success' | 'rejected'): void => {
+  console.log('updateTransactionStatus called:', { userId, transactionId, status });
+  
   const transactions = getTransactions(userId);
+  console.log('Found transactions for user:', transactions.length);
+  
   const txIdx = transactions.findIndex(t => t.id === transactionId);
-  if (txIdx === -1) return;
+  console.log('Transaction index:', txIdx);
+  
+  if (txIdx === -1) {
+    console.log('Transaction not found!');
+    return;
+  }
 
   const tx = transactions[txIdx];
-  tx.status = status;
+  console.log('Original transaction:', tx);
+  
+  // Create updated transaction with new status
+  transactions[txIdx] = { ...tx, status };
+  console.log('Updated transaction:', transactions[txIdx]);
+  
+  // Save updated transactions
   saveTransactions(userId, transactions);
+  console.log('Transactions saved');
 
   if (status === 'success') {
     const allUsers = getAllUsers();
     const userIdx = allUsers.findIndex(u => u.id === userId);
     if (userIdx !== -1) {
-      const user = allUsers[userIdx];
+      const user = { ...allUsers[userIdx] };
       if (tx.type === 'recharge') {
         user.balance += tx.amount;
         user.totalRecharge += tx.amount;
@@ -463,6 +479,7 @@ export const updateTransactionStatus = (userId: string, transactionId: string, s
       }
       allUsers[userIdx] = user;
       saveAllUsers(allUsers);
+      console.log('User updated:', user);
 
       const currentUser = getCurrentUser();
       if (currentUser && currentUser.id === userId) {
@@ -474,7 +491,7 @@ export const updateTransactionStatus = (userId: string, transactionId: string, s
     const allUsers = getAllUsers();
     const userIdx = allUsers.findIndex(u => u.id === userId);
     if (userIdx !== -1) {
-      allUsers[userIdx].balance += tx.amount;
+      allUsers[userIdx] = { ...allUsers[userIdx], balance: allUsers[userIdx].balance + tx.amount };
       saveAllUsers(allUsers);
 
       const currentUser = getCurrentUser();
