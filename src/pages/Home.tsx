@@ -2,11 +2,11 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowUpRight, ArrowDownRight, Wallet, LogOut, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Wallet, LogOut, ShieldCheck, Sparkles, Gift, Bell } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { getProducts, getInvestments, formatCurrency, Product, Investment } from "@/lib/database";
+import { getProducts, getInvestments, formatCurrency, canClaimToday, Product, Investment } from "@/lib/database";
 import RechargeDialog from "@/components/RechargeDialog";
 import WithdrawDialog from "@/components/WithdrawDialog";
 import InvestDialog from "@/components/InvestDialog";
@@ -60,6 +60,10 @@ const Home = () => {
 
   const activeInvestments = investments.filter(i => i.status === 'active');
   const totalDailyIncome = activeInvestments.reduce((sum, i) => sum + i.daily_income, 0);
+  
+  // Calculate claimable investments
+  const claimableInvestments = activeInvestments.filter(inv => canClaimToday(inv.last_claimed_at));
+  const totalClaimable = claimableInvestments.reduce((sum, inv) => sum + inv.daily_income, 0);
 
   return (
     <div className="space-y-6 p-4 pt-6">
@@ -95,9 +99,37 @@ const Home = () => {
             <Wallet className="w-5 h-5 text-primary" />
             <span className="text-sm text-muted-foreground font-medium">Saldo Tersedia</span>
           </div>
-          <p className="text-3xl font-heading font-bold text-primary mb-6 drop-shadow-[0_0_15px_hsl(185,100%,50%)]">
+          <p className="text-3xl font-heading font-bold text-primary mb-4 drop-shadow-[0_0_15px_hsl(185,100%,50%)]">
             {formatCurrency(balance)}
           </p>
+
+          {/* Claim Today Notification */}
+          {claimableInvestments.length > 0 && (
+            <Link to="/account">
+              <div className="bg-gradient-to-r from-success/20 via-primary/10 to-success/20 border border-success/40 rounded-lg p-3 mb-4 cursor-pointer hover:border-success/60 transition-all group">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 bg-success/20 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Gift className="w-4 h-4 text-success" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <Bell className="w-3 h-3 text-success animate-bounce" />
+                      <p className="text-sm font-semibold text-foreground">Klaim Hari Ini</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {claimableInvestments.length} investasi siap diklaim
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-success drop-shadow-[0_0_8px_hsl(145,100%,50%)]">
+                      +{formatCurrency(totalClaimable)}
+                    </p>
+                    <Sparkles className="w-4 h-4 text-success ml-auto" />
+                  </div>
+                </div>
+              </div>
+            </Link>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <Button
