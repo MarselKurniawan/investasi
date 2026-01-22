@@ -2,14 +2,15 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowUpRight, ArrowDownRight, Wallet, LogOut, ShieldCheck, Sparkles, Gift, Bell } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Wallet, LogOut, ShieldCheck, Sparkles, Gift, Bell, PartyPopper, Coins } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { getProducts, getInvestments, formatCurrency, canClaimToday, Product, Investment } from "@/lib/database";
+import { getProducts, getInvestments, formatCurrency, canClaimToday, updateInvestment, updateProfile, createTransaction, processReferralRabat, Product, Investment } from "@/lib/database";
 import RechargeDialog from "@/components/RechargeDialog";
 import WithdrawDialog from "@/components/WithdrawDialog";
 import InvestDialog from "@/components/InvestDialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -22,6 +23,10 @@ const Home = () => {
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [investOpen, setInvestOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [claimDialogOpen, setClaimDialogOpen] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [claimed, setClaimed] = useState(false);
+  const [isClaiming, setIsClaiming] = useState(false);
 
   const loadData = async () => {
     if (user) {
@@ -65,6 +70,75 @@ const Home = () => {
   const claimableInvestments = activeInvestments.filter(inv => canClaimToday(inv.last_claimed_at));
   const totalClaimable = claimableInvestments.reduce((sum, inv) => sum + inv.daily_income, 0);
 
+  const handleOpenClaimDialog = () => {
+    setClaimed(false);
+    setShowConfetti(false);
+    setClaimDialogOpen(true);
+  };
+
+  const handleClaimAll = async () => {
+    if (!user || !profile || claimableInvestments.length === 0 || isClaiming) return;
+    
+    setIsClaiming(true);
+    
+    try {
+      let totalClaimed = 0;
+      
+      for (const investment of claimableInvestments) {
+        const newTotalEarned = investment.total_earned + investment.daily_income;
+        const newDaysRemaining = investment.days_remaining - 1;
+        
+        await updateInvestment(investment.id, {
+          total_earned: newTotalEarned,
+          days_remaining: newDaysRemaining,
+          last_claimed_at: new Date().toISOString(),
+          status: newDaysRemaining <= 0 ? 'completed' : 'active'
+        });
+
+        await createTransaction({
+          user_id: user.id,
+          type: 'income',
+          amount: investment.daily_income,
+          status: 'success',
+          description: `Income harian dari ${investment.product_name}`
+        });
+
+        await processReferralRabat(user.id, investment.daily_income);
+        
+        totalClaimed += investment.daily_income;
+      }
+
+      // Update profile balance and total income
+      await updateProfile(user.id, {
+        balance: profile.balance + totalClaimed,
+        total_income: profile.total_income + totalClaimed
+      });
+
+      setClaimed(true);
+      setShowConfetti(true);
+
+      await loadData();
+
+      toast({
+        title: "🎉 Klaim Berhasil!",
+        description: `Anda mendapatkan ${formatCurrency(totalClaimed)} dari ${claimableInvestments.length} investasi`,
+      });
+
+      setTimeout(() => {
+        setClaimDialogOpen(false);
+      }, 2500);
+    } catch (error) {
+      console.error('Error claiming income:', error);
+      toast({
+        title: "Gagal Klaim",
+        description: "Terjadi kesalahan saat mengklaim penghasilan.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsClaiming(false);
+    }
+  };
+
   return (
     <div className="space-y-6 p-4 pt-6">
       {/* Header */}
@@ -103,34 +177,6 @@ const Home = () => {
             {formatCurrency(balance)}
           </p>
 
-          {/* Claim Today Notification */}
-          {claimableInvestments.length > 0 && (
-            <Link to="/account">
-              <div className="bg-gradient-to-r from-success/20 via-primary/10 to-success/20 border border-success/40 rounded-lg p-3 mb-4 cursor-pointer hover:border-success/60 transition-all group">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 bg-success/20 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Gift className="w-4 h-4 text-success" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <Bell className="w-3 h-3 text-success animate-bounce" />
-                      <p className="text-sm font-semibold text-foreground">Klaim Hari Ini</p>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {claimableInvestments.length} investasi siap diklaim
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-bold text-success drop-shadow-[0_0_8px_hsl(145,100%,50%)]">
-                      +{formatCurrency(totalClaimable)}
-                    </p>
-                    <Sparkles className="w-4 h-4 text-success ml-auto" />
-                  </div>
-                </div>
-              </div>
-            </Link>
-          )}
-
           <div className="grid grid-cols-2 gap-3">
             <Button
               variant="success"
@@ -151,6 +197,47 @@ const Home = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Claim Today Notification Banner - Outside Balance Card */}
+      {claimableInvestments.length > 0 && (
+        <Card 
+          className="shadow-card bg-gradient-to-r from-success/10 via-primary/5 to-success/10 border-success/40 hover:border-success/60 transition-all cursor-pointer overflow-hidden group"
+          onClick={handleOpenClaimDialog}
+        >
+          <CardContent className="p-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-success/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Gift className="w-6 h-6 text-success" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <Bell className="w-3.5 h-3.5 text-success animate-bounce" />
+                  <p className="text-base font-semibold text-foreground">Klaim Hari Ini</p>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {claimableInvestments.length} investasi siap diklaim
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-lg font-bold text-success drop-shadow-[0_0_10px_hsl(145,100%,50%)]">
+                  +{formatCurrency(totalClaimable)}
+                </p>
+                <Button 
+                  size="sm" 
+                  variant="success"
+                  className="mt-1 text-xs shadow-success-glow"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenClaimDialog();
+                  }}
+                >
+                  {claimableInvestments.length > 1 ? 'Klaim Semua' : 'Klaim'}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Active Investments Summary */}
       {activeInvestments.length > 0 && (
@@ -288,6 +375,95 @@ const Home = () => {
         balance={balance}
         onSuccess={loadData}
       />
+
+      {/* Claim All Dialog with Confetti */}
+      <Dialog open={claimDialogOpen} onOpenChange={setClaimDialogOpen}>
+        <DialogContent className="max-w-sm bg-gradient-to-br from-background via-background to-success/10 border-success/30">
+          <DialogHeader>
+            <DialogTitle className="text-center text-xl font-heading">
+              {claimed ? "🎉 Selamat!" : "Klaim Income Hari Ini"}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="relative py-6">
+            {/* Confetti Animation */}
+            {showConfetti && (
+              <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                {[...Array(30)].map((_, i) => (
+                  <div 
+                    key={i} 
+                    className="absolute animate-confetti" 
+                    style={{ 
+                      left: `${Math.random() * 100}%`, 
+                      animationDelay: `${Math.random() * 0.5}s`, 
+                      animationDuration: `${1 + Math.random() * 1}s` 
+                    }}
+                  >
+                    <Sparkles 
+                      className="w-4 h-4" 
+                      style={{ color: ['#00F5FF', '#FF00E5', '#FFD700', '#00FF88'][Math.floor(Math.random() * 4)] }} 
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className={`flex flex-col items-center gap-4 transition-all duration-500 ${claimed ? 'scale-110' : ''}`}>
+              <div className={`relative ${claimed ? 'animate-bounce' : 'animate-pulse'}`}>
+                <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-success via-primary to-success flex items-center justify-center shadow-lg shadow-success/30">
+                  {claimed ? (
+                    <PartyPopper className="w-12 h-12 text-primary-foreground" />
+                  ) : (
+                    <Gift className="w-12 h-12 text-primary-foreground" />
+                  )}
+                </div>
+                {claimed && (
+                  <div className="absolute -top-2 -right-2 animate-ping">
+                    <Coins className="w-6 h-6 text-accent" />
+                  </div>
+                )}
+              </div>
+
+              <div className="text-center space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  {claimableInvestments.length} Investasi Aktif
+                </p>
+                <p className={`text-3xl font-bold transition-all duration-300 ${claimed ? 'text-success scale-125' : 'text-foreground'}`}>
+                  {claimed ? '+' : ''}{formatCurrency(totalClaimable)}
+                </p>
+                {claimed && (
+                  <p className="text-sm text-success animate-fade-in">
+                    Berhasil ditambahkan ke saldo!
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {claimed && (
+              <div className="absolute inset-0 bg-gradient-to-t from-success/20 to-transparent rounded-xl animate-pulse" />
+            )}
+          </div>
+
+          {!claimed && (
+            <Button 
+              onClick={handleClaimAll} 
+              disabled={isClaiming}
+              className="w-full bg-gradient-to-r from-success to-primary hover:from-success/90 hover:to-primary/90 text-primary-foreground font-semibold h-12 shadow-lg shadow-success/30"
+            >
+              <Gift className="w-5 h-5 mr-2" />
+              {isClaiming ? 'Memproses...' : claimableInvestments.length > 1 ? 'Klaim Semua Sekarang' : 'Klaim Sekarang'}
+            </Button>
+          )}
+
+          {claimed && (
+            <div className="flex items-center justify-center gap-2 text-success animate-fade-in">
+              <Sparkles className="w-4 h-4" />
+              <span className="font-medium">Semua income berhasil di-klaim!</span>
+              <Sparkles className="w-4 h-4" />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
