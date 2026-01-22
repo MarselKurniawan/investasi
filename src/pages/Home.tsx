@@ -231,7 +231,7 @@ const Home = () => {
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground mb-2">Rabat</p>
             <p className="text-lg font-bold text-vip-gold drop-shadow-[0_0_8px_hsl(45,100%,55%)]">
-              {formatCurrency(profile?.team_income || 0)}
+              {formatCurrency(profile?.rabat_income || 0)}
             </p>
           </CardContent>
         </Card>

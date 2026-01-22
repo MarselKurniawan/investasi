@@ -12,6 +12,7 @@ export interface Profile {
   total_recharge: number;
   total_withdraw: number;
   team_income: number;
+  rabat_income: number;
   vip_level: number;
   referral_code: string | null;
   referred_by: string | null;
@@ -188,12 +189,13 @@ export const processReferralRabat = async (userId: string, dailyProfit: number):
     const rabat = Math.floor(dailyProfit * rabatRate);
 
     if (rabat > 0) {
-      // Update referrer balance and team_income
+      // Update referrer balance, rabat_income, and total_income
+      const currentRabatIncome = (referrer as any).rabat_income || 0;
       await supabase
         .from('profiles')
         .update({
           balance: referrer.balance + rabat,
-          team_income: referrer.team_income + rabat,
+          rabat_income: currentRabatIncome + rabat,
           total_income: referrer.total_income + rabat,
         })
         .eq('user_id', referrer.user_id);

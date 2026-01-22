@@ -133,17 +133,23 @@ const Team = () => {
       </Card>
 
       {/* Referral Stats */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         <Card className="shadow-card">
-          <CardContent className="p-4 text-center">
-            <p className="text-xs text-muted-foreground mb-2">Total Komisi</p>
-            <p className="text-base font-bold text-success">{formatCurrency(referralStats.totalEarnings)}</p>
+          <CardContent className="p-3 text-center">
+            <p className="text-xs text-muted-foreground mb-1">Komisi</p>
+            <p className="text-sm font-bold text-primary">{formatCurrency(profile?.team_income || 0)}</p>
           </CardContent>
         </Card>
         <Card className="shadow-card">
-          <CardContent className="p-4 text-center">
-            <p className="text-xs text-muted-foreground mb-2">Total Anggota</p>
-            <p className="text-base font-bold text-primary">{referralStats.activeMembers}</p>
+          <CardContent className="p-3 text-center">
+            <p className="text-xs text-muted-foreground mb-1">Rabat</p>
+            <p className="text-sm font-bold text-vip-gold">{formatCurrency(profile?.rabat_income || 0)}</p>
+          </CardContent>
+        </Card>
+        <Card className="shadow-card">
+          <CardContent className="p-3 text-center">
+            <p className="text-xs text-muted-foreground mb-1">Anggota</p>
+            <p className="text-sm font-bold text-success">{teamMembers.length}</p>
           </CardContent>
         </Card>
       </div>
