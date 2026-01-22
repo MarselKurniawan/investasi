@@ -12,13 +12,16 @@ import {
   Gift,
   Package,
   Sparkles,
+  Bell,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import { getTransactions, getInvestments, updateInvestment, updateProfile, createTransaction, formatCurrency, canClaimToday, processReferralRabat, Transaction, Investment } from "@/lib/database";
 import ClaimRewardDialog from "@/components/ClaimRewardDialog";
 
 const Account = () => {
   const { user, profile, refreshProfile } = useAuth();
+  const { toast } = useToast();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [investments, setInvestments] = useState<Investment[]>([]);
   const [claimDialogOpen, setClaimDialogOpen] = useState(false);
@@ -132,13 +135,48 @@ const Account = () => {
       await processReferralRabat(user.id, selectedInvestment.daily_income);
 
       await refreshData();
+
+      // Show success notification
+      toast({
+        title: "🎉 Klaim Berhasil!",
+        description: `Anda mendapatkan ${formatCurrency(selectedInvestment.daily_income)} dari ${selectedInvestment.product_name}`,
+      });
     } catch (error) {
       console.error('Error claiming income:', error);
+      toast({
+        title: "Gagal Klaim",
+        description: "Terjadi kesalahan saat mengklaim penghasilan. Silakan coba lagi.",
+        variant: "destructive",
+      });
     }
   };
 
+  // Count claimable investments
+  const claimableInvestments = activeInvestments.filter(inv => canClaimToday(inv.last_claimed_at));
+  const totalClaimable = claimableInvestments.reduce((sum, inv) => sum + inv.daily_income, 0);
+
   return (
     <div className="space-y-6 p-4 pt-6">
+      {/* Claimable Notification Banner */}
+      {claimableInvestments.length > 0 && (
+        <div className="bg-gradient-to-r from-success/20 via-primary/20 to-success/20 border border-success/30 rounded-xl p-4 animate-pulse-slow">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-success/20 rounded-full flex items-center justify-center">
+              <Bell className="w-5 h-5 text-success" />
+            </div>
+            <div className="flex-1">
+              <p className="font-semibold text-foreground">
+                {claimableInvestments.length} Investasi Siap Diklaim!
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Total: <span className="font-bold text-success">{formatCurrency(totalClaimable)}</span>
+              </p>
+            </div>
+            <Sparkles className="w-5 h-5 text-success animate-bounce" />
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div>
         <h1 className="text-2xl font-heading font-bold text-foreground mb-1">Akun Saya</h1>
