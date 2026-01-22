@@ -14,6 +14,7 @@ interface Profile {
   total_recharge: number;
   total_withdraw: number;
   team_income: number;
+  rabat_income: number;
   vip_level: number;
   referral_code: string | null;
   referred_by: string | null;

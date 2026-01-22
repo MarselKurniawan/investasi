@@ -180,6 +180,7 @@ export type Database = {
           id: string
           name: string
           phone: string | null
+          rabat_income: number | null
           referral_code: string | null
           referred_by: string | null
           team_income: number | null
@@ -197,6 +198,7 @@ export type Database = {
           id?: string
           name?: string
           phone?: string | null
+          rabat_income?: number | null
           referral_code?: string | null
           referred_by?: string | null
           team_income?: number | null
@@ -214,6 +216,7 @@ export type Database = {
           id?: string
           name?: string
           phone?: string | null
+          rabat_income?: number | null
           referral_code?: string | null
           referred_by?: string | null
           team_income?: number | null
