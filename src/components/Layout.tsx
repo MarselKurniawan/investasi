@@ -21,7 +21,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-primary/20 backdrop-blur-xl bg-card/90">
-        <div className="mx-auto max-w-md flex items-center justify-around px-2 py-3">
+        <div className="mx-auto max-w-md flex items-center justify-between px-6 py-3">
           <NavLink
             to="/"
             className="flex flex-col items-center gap-1 px-3 py-2 text-muted-foreground transition-all hover:text-primary"

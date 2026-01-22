@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Product, formatCurrency, createInvestment, createTransaction, updateProfile } from "@/lib/database";
+import { Product, formatCurrency, createInvestment, createTransaction, updateProfile, processReferralCommission } from "@/lib/database";
 import { useAuth } from "@/hooks/useAuth";
 import { TrendingUp, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -74,6 +74,9 @@ const InvestDialog = ({ open, onOpenChange, product, balance, onSuccess }: Inves
         status: 'success',
         description: `Investasi ${product.name}`,
       });
+
+      // Process referral commission for upline (commission on purchase)
+      await processReferralCommission(user.id, product.price);
 
       setIsLoading(false);
       setSuccess(true);

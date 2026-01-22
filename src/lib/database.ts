@@ -89,16 +89,129 @@ export const formatCurrency = (amount: number): string => {
   }).format(amount);
 };
 
-// Commission rates by VIP level
+// Commission rates by tier (on purchase)
+// Tier A (VIP 3+) = 10%, Tier B (VIP 2) = 3%, Tier C (VIP 1) = 2%
 export const getCommissionRate = (vipLevel: number): number => {
-  const rates: Record<number, number> = {
-    1: 0.05,
-    2: 0.07,
-    3: 0.09,
-    4: 0.11,
-    5: 0.13,
-  };
-  return rates[vipLevel] || 0.05;
+  if (vipLevel >= 3) return 0.10; // Tier A - 10%
+  if (vipLevel === 2) return 0.03; // Tier B - 3%
+  return 0.02; // Tier C - 2%
+};
+
+// Rabat rates by tier (on daily profit)
+// Tier A (VIP 3+) = 5%, Tier B (VIP 2) = 3%, Tier C (VIP 1) = 2%
+export const getRabatRate = (vipLevel: number): number => {
+  if (vipLevel >= 3) return 0.05; // Tier A - 5%
+  if (vipLevel === 2) return 0.03; // Tier B - 3%
+  return 0.02; // Tier C - 2%
+};
+
+// Get tier label based on VIP level
+export const getTierLabel = (vipLevel: number): string => {
+  if (vipLevel >= 3) return 'A';
+  if (vipLevel === 2) return 'B';
+  return 'C';
+};
+
+// Process referral commission when user invests
+export const processReferralCommission = async (userId: string, investAmount: number): Promise<void> => {
+  try {
+    // Get investor profile to find who referred them
+    const { data: investor } = await supabase
+      .from('profiles')
+      .select('referred_by')
+      .eq('user_id', userId)
+      .single();
+
+    if (!investor?.referred_by) return;
+
+    // Find referrer by referral code
+    const { data: referrer } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('referral_code', investor.referred_by)
+      .single();
+
+    if (!referrer) return;
+
+    const commissionRate = getCommissionRate(referrer.vip_level);
+    const commission = Math.floor(investAmount * commissionRate);
+
+    if (commission > 0) {
+      // Update referrer balance and team_income
+      await supabase
+        .from('profiles')
+        .update({
+          balance: referrer.balance + commission,
+          team_income: referrer.team_income + commission,
+          total_income: referrer.total_income + commission,
+        })
+        .eq('user_id', referrer.user_id);
+
+      // Create commission transaction for referrer
+      await supabase
+        .from('transactions')
+        .insert({
+          user_id: referrer.user_id,
+          type: 'commission',
+          amount: commission,
+          status: 'success',
+          description: `Komisi ${(commissionRate * 100).toFixed(0)}% dari pembelian produk`,
+        });
+    }
+  } catch (error) {
+    console.error('Error processing referral commission:', error);
+  }
+};
+
+// Process rabat when user claims daily income
+export const processReferralRabat = async (userId: string, dailyProfit: number): Promise<void> => {
+  try {
+    // Get investor profile to find who referred them
+    const { data: investor } = await supabase
+      .from('profiles')
+      .select('referred_by')
+      .eq('user_id', userId)
+      .single();
+
+    if (!investor?.referred_by) return;
+
+    // Find referrer by referral code
+    const { data: referrer } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('referral_code', investor.referred_by)
+      .single();
+
+    if (!referrer) return;
+
+    const rabatRate = getRabatRate(referrer.vip_level);
+    const rabat = Math.floor(dailyProfit * rabatRate);
+
+    if (rabat > 0) {
+      // Update referrer balance and team_income
+      await supabase
+        .from('profiles')
+        .update({
+          balance: referrer.balance + rabat,
+          team_income: referrer.team_income + rabat,
+          total_income: referrer.total_income + rabat,
+        })
+        .eq('user_id', referrer.user_id);
+
+      // Create rabat transaction for referrer
+      await supabase
+        .from('transactions')
+        .insert({
+          user_id: referrer.user_id,
+          type: 'rabat',
+          amount: rabat,
+          status: 'success',
+          description: `Rabat ${(rabatRate * 100).toFixed(0)}% dari profit harian bawahan`,
+        });
+    }
+  } catch (error) {
+    console.error('Error processing referral rabat:', error);
+  }
 };
 
 // Profile functions
