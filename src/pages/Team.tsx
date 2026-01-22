@@ -38,31 +38,34 @@ const Team = () => {
     {
       tier: "C",
       name: "Bronze Team",
-      commission: 1,
+      commission: 2,
+      rabat: 2,
       requiredMembers: 5,
       currentMembers: totalReferrals,
       color: "text-amber-700",
-      bgColor: "bg-amber-50",
+      bgColor: "bg-amber-900/20",
       achieved: totalReferrals >= 5,
     },
     {
       tier: "B",
       name: "Silver Team",
-      commission: 4,
+      commission: 3,
+      rabat: 3,
       requiredMembers: 15,
       currentMembers: totalReferrals,
-      color: "text-gray-600",
-      bgColor: "bg-gray-50",
+      color: "text-gray-400",
+      bgColor: "bg-gray-800/30",
       achieved: totalReferrals >= 15,
     },
     {
       tier: "A",
       name: "Gold Team",
       commission: 10,
+      rabat: 5,
       requiredMembers: 30,
       currentMembers: totalReferrals,
-      color: "text-yellow-600",
-      bgColor: "bg-yellow-50",
+      color: "text-vip-gold",
+      bgColor: "bg-vip-gold/10",
       achieved: totalReferrals >= 30,
     },
   ];
@@ -165,7 +168,7 @@ const Team = () => {
                       Tim {tier.tier} - {tier.name}
                     </CardTitle>
                     <p className="text-sm text-muted-foreground">
-                      Komisi {tier.commission}% dari setiap transaksi
+                      Komisi {tier.commission}% (pembelian) • Rabat {tier.rabat}% (profit harian)
                     </p>
                   </div>
                   {tier.achieved && (
@@ -190,18 +193,23 @@ const Team = () => {
                     />
                   </div>
 
-                  <div className={`${tier.bgColor} rounded-lg p-3 flex items-center justify-between`}>
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className={`w-4 h-4 ${tier.color}`} />
+                  <div className={`${tier.bgColor} rounded-lg p-3`}>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className={`w-4 h-4 ${tier.color}`} />
+                        <span className={`text-sm font-semibold ${tier.color}`}>
+                          Komisi {tier.commission}%
+                        </span>
+                      </div>
                       <span className={`text-sm font-semibold ${tier.color}`}>
-                        Komisi {tier.commission}%
+                        Rabat {tier.rabat}%
                       </span>
                     </div>
-                    <span className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                       {tier.requiredMembers - tier.currentMembers > 0
                         ? `${tier.requiredMembers - tier.currentMembers} anggota lagi`
                         : "Tercapai!"}
-                    </span>
+                    </p>
                   </div>
                 </div>
               </CardContent>

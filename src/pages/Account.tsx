@@ -14,7 +14,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { getTransactions, getInvestments, updateInvestment, updateProfile, createTransaction, formatCurrency, canClaimToday, Transaction, Investment } from "@/lib/database";
+import { getTransactions, getInvestments, updateInvestment, updateProfile, createTransaction, formatCurrency, canClaimToday, processReferralRabat, Transaction, Investment } from "@/lib/database";
 import ClaimRewardDialog from "@/components/ClaimRewardDialog";
 
 const Account = () => {
@@ -57,6 +57,8 @@ const Account = () => {
         return <TrendingUp className="w-4 h-4 text-success" />;
       case "commission":
         return <Users className="w-4 h-4 text-primary" />;
+      case "rabat":
+        return <Users className="w-4 h-4 text-vip-gold" />;
       case "invest":
         return <Package className="w-4 h-4 text-primary" />;
       default:
@@ -71,6 +73,7 @@ const Account = () => {
       invest: "Investasi",
       income: "Penghasilan Harian",
       commission: "Komisi Referral",
+      rabat: "Rabat Harian",
     };
     return labels[type] || type;
   };
@@ -124,6 +127,9 @@ const Account = () => {
         status: 'success',
         description: `Income harian dari ${selectedInvestment.product_name}`
       });
+
+      // Process referral rabat for upline (rabat on daily profit)
+      await processReferralRabat(user.id, selectedInvestment.daily_income);
 
       await refreshData();
     } catch (error) {
@@ -295,10 +301,10 @@ const Account = () => {
                     <div className="text-right">
                       <p
                         className={`text-sm font-bold ${
-                          transaction.type === 'recharge' || transaction.type === 'income' || transaction.type === 'commission' ? "text-success" : "text-foreground"
+                          transaction.type === 'recharge' || transaction.type === 'income' || transaction.type === 'commission' || transaction.type === 'rabat' ? "text-success" : "text-foreground"
                         }`}
                       >
-                        {transaction.type === 'recharge' || transaction.type === 'income' || transaction.type === 'commission' ? "+" : "-"}
+                        {transaction.type === 'recharge' || transaction.type === 'income' || transaction.type === 'commission' || transaction.type === 'rabat' ? "+" : "-"}
                         {formatCurrency(transaction.amount)}
                       </p>
                       <Badge
