@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Home, Package, Users, UserCircle, Wallet, ArrowUpRight, ArrowDownRight, Ticket, Landmark, BarChart3, Settings, Headphones, Share2, Crown, Building2, Percent } from "lucide-react";
+import { Home, Package, Users, UserCircle, Wallet, ArrowUpRight, ArrowDownRight, Ticket, Landmark, BarChart3, Settings, Headphones, Share2, Crown, Building2, Percent, History } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import RabatInfoDialog from "@/components/RabatInfoDialog";
 
@@ -40,9 +40,8 @@ const QuickMenuSheet = ({ open, onOpenChange }: QuickMenuSheetProps) => {
     { title: "Akun", items: [
       { icon: Landmark, label: "Account Bank", path: "/profile", color: "text-primary" },
       { icon: Ticket, label: "Klaim Kupon", path: "/profile", color: "text-vip-gold" },
-      { icon: Percent, label: "Komisi & Rabat", path: null, color: "text-accent", action: handleOpenRabatInfo },
-      { icon: Share2, label: "Referral", path: "/team", color: "text-success" },
-      { icon: Crown, label: "VIP Level", path: "/profile", color: "text-primary" },
+      { icon: History, label: "Riwayat Komisi", path: "/commission-history", color: "text-success" },
+      { icon: Share2, label: "Referral", path: "/team", color: "text-accent" },
     ]},
     { title: "Bantuan", items: [
       { icon: Building2, label: "Profil Perusahaan", path: "/profile", color: "text-primary" },
@@ -65,9 +64,7 @@ const QuickMenuSheet = ({ open, onOpenChange }: QuickMenuSheetProps) => {
                     <button 
                       key={item.label} 
                       onClick={() => {
-                        if ('action' in item && item.action) {
-                          item.action();
-                        } else if (item.path) {
+                        if (item.path) {
                           handleNavigate(item.path);
                         }
                       }} 

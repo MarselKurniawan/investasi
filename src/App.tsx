@@ -15,6 +15,7 @@ import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
 import AdminUsers from "./pages/AdminUsers";
 import AdminProducts from "./pages/AdminProducts";
+import CommissionHistory from "./pages/CommissionHistory";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -98,6 +99,14 @@ const App = () => (
               element={
                 <ProtectedRoute adminOnly>
                   <Layout><AdminProducts /></Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/commission-history"
+              element={
+                <ProtectedRoute>
+                  <Layout><CommissionHistory /></Layout>
                 </ProtectedRoute>
               }
             />
