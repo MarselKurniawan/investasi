@@ -113,103 +113,48 @@ export const getTierLabel = (vipLevel: number): string => {
   return 'C';
 };
 
-// Process referral commission when user invests
+// Process referral commission when user invests (via Edge Function to bypass RLS)
 export const processReferralCommission = async (userId: string, investAmount: number): Promise<void> => {
   try {
-    // Get investor profile to find who referred them
-    const { data: investor } = await supabase
-      .from('profiles')
-      .select('referred_by')
-      .eq('user_id', userId)
-      .single();
+    const { data, error } = await supabase.functions.invoke('process-referral', {
+      body: {
+        userId,
+        amount: investAmount,
+        type: 'commission'
+      }
+    });
 
-    if (!investor?.referred_by) return;
+    if (error) {
+      console.error('Error calling process-referral function:', error);
+      return;
+    }
 
-    // Find referrer by referral code
-    const { data: referrer } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('referral_code', investor.referred_by)
-      .single();
-
-    if (!referrer) return;
-
-    const commissionRate = getCommissionRate(referrer.vip_level);
-    const commission = Math.floor(investAmount * commissionRate);
-
-    if (commission > 0) {
-      // Update referrer balance and team_income
-      await supabase
-        .from('profiles')
-        .update({
-          balance: referrer.balance + commission,
-          team_income: referrer.team_income + commission,
-          total_income: referrer.total_income + commission,
-        })
-        .eq('user_id', referrer.user_id);
-
-      // Create commission transaction for referrer
-      await supabase
-        .from('transactions')
-        .insert({
-          user_id: referrer.user_id,
-          type: 'commission',
-          amount: commission,
-          status: 'success',
-          description: `Komisi ${(commissionRate * 100).toFixed(0)}% dari pembelian produk`,
-        });
+    if (data?.reward > 0) {
+      console.log(`Commission processed: ${data.reward} for ${data.referrerName}`);
     }
   } catch (error) {
     console.error('Error processing referral commission:', error);
   }
 };
 
-// Process rabat when user claims daily income
+// Process rabat when user claims daily income (via Edge Function to bypass RLS)
 export const processReferralRabat = async (userId: string, dailyProfit: number): Promise<void> => {
   try {
-    // Get investor profile to find who referred them
-    const { data: investor } = await supabase
-      .from('profiles')
-      .select('referred_by')
-      .eq('user_id', userId)
-      .single();
+    const { data, error } = await supabase.functions.invoke('process-referral', {
+      body: {
+        userId,
+        amount: dailyProfit,
+        type: 'rabat'
+      }
+    });
 
-    if (!investor?.referred_by) return;
+    if (error) {
+      console.error('Error calling process-referral function:', error);
+      return;
+    }
 
-    // Find referrer by referral code
-    const { data: referrer } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('referral_code', investor.referred_by)
-      .single();
-
-    if (!referrer) return;
-
-    const rabatRate = getRabatRate(referrer.vip_level);
-    const rabat = Math.floor(dailyProfit * rabatRate);
-
-    if (rabat > 0) {
-      // Update referrer balance, rabat_income, and total_income
-      const currentRabatIncome = (referrer as any).rabat_income || 0;
-      await supabase
-        .from('profiles')
-        .update({
-          balance: referrer.balance + rabat,
-          rabat_income: currentRabatIncome + rabat,
-          total_income: referrer.total_income + rabat,
-        })
-        .eq('user_id', referrer.user_id);
-
-      // Create rabat transaction for referrer
-      await supabase
-        .from('transactions')
-        .insert({
-          user_id: referrer.user_id,
-          type: 'rabat',
-          amount: rabat,
-          status: 'success',
-          description: `Rabat ${(rabatRate * 100).toFixed(0)}% dari profit harian bawahan`,
-        });
+    if (data?.reward > 0) {
+      console.log(`Rabat processed: ${data.reward} for ${data.referrerName}`);
     }
   } catch (error) {
     console.error('Error processing referral rabat:', error);
