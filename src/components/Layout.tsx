@@ -21,10 +21,10 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-primary/20 backdrop-blur-xl bg-card/90">
-        <div className="mx-auto max-w-md flex items-center justify-between px-6 py-3">
+        <div className="mx-auto max-w-md grid grid-cols-5 items-center py-3">
           <NavLink
             to="/"
-            className="flex flex-col items-center gap-1 px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+            className="flex flex-col items-center gap-1 py-2 text-muted-foreground transition-all hover:text-primary"
             activeClassName="text-primary font-medium drop-shadow-[0_0_8px_hsl(185,100%,50%)]"
           >
             <Home className="w-5 h-5" />
@@ -33,7 +33,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
           
           <NavLink
             to="/product"
-            className="flex flex-col items-center gap-1 px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+            className="flex flex-col items-center gap-1 py-2 text-muted-foreground transition-all hover:text-primary"
             activeClassName="text-primary font-medium drop-shadow-[0_0_8px_hsl(185,100%,50%)]"
           >
             <Package className="w-5 h-5" />
@@ -43,7 +43,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
           {/* Center Menu Button - Prominent */}
           <button
             onClick={() => setMenuOpen(true)}
-            className="relative flex flex-col items-center gap-1 -mt-6"
+            className="flex flex-col items-center gap-1 -mt-6"
           >
             <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary via-accent to-vip-gold flex items-center justify-center shadow-glow neon-pulse">
               <LayoutGrid className="w-7 h-7 text-white" />
@@ -53,7 +53,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
           
           <NavLink
             to="/team"
-            className="flex flex-col items-center gap-1 px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+            className="flex flex-col items-center gap-1 py-2 text-muted-foreground transition-all hover:text-primary"
             activeClassName="text-primary font-medium drop-shadow-[0_0_8px_hsl(185,100%,50%)]"
           >
             <Users className="w-5 h-5" />
@@ -62,7 +62,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
           
           <NavLink
             to="/profile"
-            className="flex flex-col items-center gap-1 px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+            className="flex flex-col items-center gap-1 py-2 text-muted-foreground transition-all hover:text-primary"
             activeClassName="text-primary font-medium drop-shadow-[0_0_8px_hsl(185,100%,50%)]"
           >
             <UserCircle className="w-5 h-5" />

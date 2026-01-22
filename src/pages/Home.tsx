@@ -210,19 +210,27 @@ const Home = () => {
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         <Card className="shadow-card border-success/20 hover:border-success/40 transition-colors">
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground mb-2">Total Income</p>
-            <p className="text-xl font-bold text-success drop-shadow-[0_0_8px_hsl(145,100%,50%)]">
+            <p className="text-lg font-bold text-success drop-shadow-[0_0_8px_hsl(145,100%,50%)]">
               {formatCurrency(profile?.total_income || 0)}
             </p>
           </CardContent>
         </Card>
         <Card className="shadow-card border-primary/20 hover:border-primary/40 transition-colors">
           <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground mb-2">Komisi Referral</p>
-            <p className="text-xl font-bold text-primary drop-shadow-[0_0_8px_hsl(185,100%,50%)]">
+            <p className="text-xs text-muted-foreground mb-2">Komisi</p>
+            <p className="text-lg font-bold text-primary drop-shadow-[0_0_8px_hsl(185,100%,50%)]">
+              {formatCurrency(profile?.team_income || 0)}
+            </p>
+          </CardContent>
+        </Card>
+        <Card className="shadow-card border-vip-gold/20 hover:border-vip-gold/40 transition-colors">
+          <CardContent className="p-4">
+            <p className="text-xs text-muted-foreground mb-2">Rabat</p>
+            <p className="text-lg font-bold text-vip-gold drop-shadow-[0_0_8px_hsl(45,100%,55%)]">
               {formatCurrency(profile?.team_income || 0)}
             </p>
           </CardContent>
