@@ -1,24 +1,105 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Commission rates by tier (on purchase)
-const getCommissionRate = (vipLevel: number): number => {
-  if (vipLevel >= 4) return 0.10; // Tier A - 10%
-  if (vipLevel >= 2) return 0.03; // Tier B - 3%
-  return 0.02; // Tier C - 2%
+// Commission rates by level (on purchase)
+// Level A (direct referral) = 10%, Level B (2nd gen) = 3%, Level C (3rd gen) = 2%
+const COMMISSION_RATES: Record<string, number> = {
+  A: 0.10, // 10%
+  B: 0.03, // 3%
+  C: 0.02, // 2%
 };
 
-// Rabat rates by tier (on daily profit)
-const getRabatRate = (vipLevel: number): number => {
-  if (vipLevel >= 4) return 0.05; // Tier A - 5%
-  if (vipLevel >= 2) return 0.03; // Tier B - 3%
-  return 0.02; // Tier C - 2%
+// Rabat rates by level (on daily profit)
+// Level A = 5%, Level B = 3%, Level C = 2%
+const RABAT_RATES: Record<string, number> = {
+  A: 0.05, // 5%
+  B: 0.03, // 3%
+  C: 0.02, // 2%
 };
+
+interface ReferrerData {
+  user_id: string;
+  name: string;
+  balance: number;
+  team_income: number;
+  rabat_income: number;
+  total_income: number;
+}
+
+interface ReferrerChain {
+  level: 'A' | 'B' | 'C';
+  referrer: ReferrerData;
+}
+
+// Helper function to get the referral chain (up to 3 levels)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function getReferrerChain(supabaseAdmin: SupabaseClient<any, any, any>, userId: string): Promise<ReferrerChain[]> {
+  const chain: ReferrerChain[] = [];
+  let currentUserId = userId;
+  const levels: Array<'A' | 'B' | 'C'> = ['A', 'B', 'C'];
+
+  for (let i = 0; i < 3; i++) {
+    // Get the current user's profile to find who referred them
+    const { data: currentUser, error: userError } = await supabaseAdmin
+      .from("profiles")
+      .select("referred_by")
+      .eq("user_id", currentUserId)
+      .single();
+
+    const userData = currentUser as { referred_by: string | null } | null;
+
+    if (userError || !userData?.referred_by) {
+      console.log(`No referrer found at level ${levels[i]} for user ${currentUserId}`);
+      break;
+    }
+
+    // Find the referrer by their referral code
+    const { data: referrer, error: referrerError } = await supabaseAdmin
+      .from("profiles")
+      .select("user_id, name, balance, team_income, rabat_income, total_income, referral_code")
+      .eq("referral_code", userData.referred_by)
+      .single();
+
+    const referrerData = referrer as {
+      user_id: string;
+      name: string;
+      balance: number;
+      team_income: number;
+      rabat_income: number;
+      total_income: number;
+      referral_code: string;
+    } | null;
+
+    if (referrerError || !referrerData) {
+      console.log(`Referrer not found for code ${userData.referred_by} at level ${levels[i]}`);
+      break;
+    }
+
+    chain.push({
+      level: levels[i],
+      referrer: {
+        user_id: referrerData.user_id,
+        name: referrerData.name,
+        balance: referrerData.balance || 0,
+        team_income: referrerData.team_income || 0,
+        rabat_income: referrerData.rabat_income || 0,
+        total_income: referrerData.total_income || 0,
+      },
+    });
+
+    console.log(`Found Level ${levels[i]} referrer: ${referrerData.name}`);
+
+    // Move up the chain - use the referrer's user_id for the next iteration
+    currentUserId = referrerData.user_id;
+  }
+
+  return chain;
+}
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -44,122 +125,113 @@ serve(async (req) => {
 
     console.log(`Processing ${type} for user ${userId}, amount: ${amount}`);
 
-    // Get investor profile to find who referred them
-    const { data: investor, error: investorError } = await supabaseAdmin
+    // Get the referral chain (up to 3 levels)
+    const referrerChain = await getReferrerChain(supabaseAdmin, userId);
+
+    if (referrerChain.length === 0) {
+      console.log("No referrers found for user:", userId);
+      return new Response(
+        JSON.stringify({ success: true, message: "No referrers found", rewards: [] }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log(`Found ${referrerChain.length} referrers in chain`);
+
+    const rewards: Array<{ level: string; name: string; reward: number }> = [];
+
+    // Get investor name for description
+    const { data: investorData } = await supabaseAdmin
       .from("profiles")
-      .select("referred_by, name")
+      .select("name")
       .eq("user_id", userId)
       .single();
 
-    if (investorError || !investor?.referred_by) {
-      console.log("No referrer found for user:", userId);
-      return new Response(
-        JSON.stringify({ success: true, message: "No referrer found" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    const investor = investorData as { name: string } | null;
+    const investorName = investor?.name || "User";
 
-    console.log(`User ${investor.name} was referred by code: ${investor.referred_by}`);
+    // Process rewards for each level in the chain
+    for (const { level, referrer } of referrerChain) {
+      let reward = 0;
+      let rewardType = "";
+      let description = "";
 
-    // Find referrer by referral code
-    const { data: referrer, error: referrerError } = await supabaseAdmin
-      .from("profiles")
-      .select("*")
-      .eq("referral_code", investor.referred_by)
-      .single();
+      if (type === "commission") {
+        const commissionRate = COMMISSION_RATES[level];
+        reward = Math.floor(amount * commissionRate);
+        rewardType = "commission";
+        description = `Komisi Level ${level} (${(commissionRate * 100).toFixed(0)}%) dari pembelian ${investorName}`;
+        
+        console.log(`Level ${level} Commission: ${commissionRate * 100}% = ${reward} for ${referrer.name}`);
 
-    if (referrerError || !referrer) {
-      console.log("Referrer not found for code:", investor.referred_by);
-      return new Response(
-        JSON.stringify({ success: true, message: "Referrer not found" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+        if (reward > 0) {
+          // Update referrer balance and team_income
+          const { error: updateError } = await supabaseAdmin
+            .from("profiles")
+            .update({
+              balance: referrer.balance + reward,
+              team_income: (referrer.team_income || 0) + reward,
+              total_income: (referrer.total_income || 0) + reward,
+            })
+            .eq("user_id", referrer.user_id);
 
-    console.log(`Found referrer: ${referrer.name} (VIP ${referrer.vip_level})`);
+          if (updateError) {
+            console.error(`Error updating referrer ${referrer.name}:`, updateError);
+            continue;
+          }
+        }
+      } else if (type === "rabat") {
+        const rabatRate = RABAT_RATES[level];
+        reward = Math.floor(amount * rabatRate);
+        rewardType = "rabat";
+        description = `Rabat Level ${level} (${(rabatRate * 100).toFixed(0)}%) dari profit harian ${investorName}`;
 
-    let reward = 0;
-    let rewardType = "";
-    let description = "";
+        console.log(`Level ${level} Rabat: ${rabatRate * 100}% = ${reward} for ${referrer.name}`);
 
-    if (type === "commission") {
-      // Commission on purchase
-      const commissionRate = getCommissionRate(referrer.vip_level);
-      reward = Math.floor(amount * commissionRate);
-      rewardType = "commission";
-      description = `Komisi ${(commissionRate * 100).toFixed(0)}% dari pembelian ${investor.name}`;
-      
-      console.log(`Commission rate: ${commissionRate * 100}%, reward: ${reward}`);
+        if (reward > 0) {
+          // Update referrer balance and rabat_income
+          const { error: updateError } = await supabaseAdmin
+            .from("profiles")
+            .update({
+              balance: referrer.balance + reward,
+              rabat_income: (referrer.rabat_income || 0) + reward,
+              total_income: (referrer.total_income || 0) + reward,
+            })
+            .eq("user_id", referrer.user_id);
 
-      if (reward > 0) {
-        // Update referrer balance and team_income
-        const { error: updateError } = await supabaseAdmin
-          .from("profiles")
-          .update({
-            balance: referrer.balance + reward,
-            team_income: (referrer.team_income || 0) + reward,
-            total_income: (referrer.total_income || 0) + reward,
-          })
-          .eq("user_id", referrer.user_id);
-
-        if (updateError) {
-          console.error("Error updating referrer profile:", updateError);
-          throw updateError;
+          if (updateError) {
+            console.error(`Error updating referrer ${referrer.name}:`, updateError);
+            continue;
+          }
         }
       }
-    } else if (type === "rabat") {
-      // Rabat on daily profit
-      const rabatRate = getRabatRate(referrer.vip_level);
-      reward = Math.floor(amount * rabatRate);
-      rewardType = "rabat";
-      description = `Rabat ${(rabatRate * 100).toFixed(0)}% dari profit harian ${investor.name}`;
-
-      console.log(`Rabat rate: ${rabatRate * 100}%, reward: ${reward}`);
 
       if (reward > 0) {
-        // Update referrer balance and rabat_income
-        const { error: updateError } = await supabaseAdmin
-          .from("profiles")
-          .update({
-            balance: referrer.balance + reward,
-            rabat_income: (referrer.rabat_income || 0) + reward,
-            total_income: (referrer.total_income || 0) + reward,
-          })
-          .eq("user_id", referrer.user_id);
+        // Create transaction for referrer
+        const { error: txError } = await supabaseAdmin
+          .from("transactions")
+          .insert({
+            user_id: referrer.user_id,
+            type: rewardType,
+            amount: reward,
+            status: "success",
+            description: description,
+          });
 
-        if (updateError) {
-          console.error("Error updating referrer profile:", updateError);
-          throw updateError;
+        if (txError) {
+          console.error(`Error creating transaction for ${referrer.name}:`, txError);
+        } else {
+          rewards.push({ level, name: referrer.name, reward });
+          console.log(`Successfully processed ${rewardType} Level ${level}: ${reward} for ${referrer.name}`);
         }
       }
-    }
-
-    if (reward > 0) {
-      // Create transaction for referrer
-      const { error: txError } = await supabaseAdmin
-        .from("transactions")
-        .insert({
-          user_id: referrer.user_id,
-          type: rewardType,
-          amount: reward,
-          status: "success",
-          description: description,
-        });
-
-      if (txError) {
-        console.error("Error creating transaction:", txError);
-        throw txError;
-      }
-
-      console.log(`Successfully processed ${rewardType}: ${reward} for ${referrer.name}`);
     }
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        reward,
-        referrerName: referrer.name,
-        type: rewardType 
+        rewards,
+        totalReward: rewards.reduce((sum, r) => sum + r.reward, 0)
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
