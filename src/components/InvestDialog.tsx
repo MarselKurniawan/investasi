@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Product, formatCurrency, createInvestment, createTransaction, updateProfile, processReferralCommission } from "@/lib/database";
 import { useAuth } from "@/hooks/useAuth";
-import { TrendingUp, CheckCircle2 } from "lucide-react";
+import { TrendingUp, CheckCircle2, Minus, Plus } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 
 interface InvestDialogProps {
@@ -20,16 +21,20 @@ const InvestDialog = ({ open, onOpenChange, product, balance, onSuccess }: Inves
   const { user, profile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [quantity, setQuantity] = useState(1);
 
   if (!product) return null;
 
-  const canInvest = balance >= product.price;
+  const totalPrice = product.price * quantity;
+  const totalDailyIncome = product.daily_income * quantity;
+  const totalIncome = product.total_income * quantity;
+  const canInvest = balance >= totalPrice;
 
   const handleInvest = async () => {
     if (!canInvest) {
       toast({
         title: "Saldo Tidak Cukup",
-        description: `Anda membutuhkan ${formatCurrency(product.price - balance)} lagi.`,
+        description: `Anda membutuhkan ${formatCurrency(totalPrice - balance)} lagi.`,
         variant: "destructive",
       });
       return;
@@ -49,17 +54,17 @@ const InvestDialog = ({ open, onOpenChange, product, balance, onSuccess }: Inves
     try {
       // Deduct balance
       await updateProfile(user.id, {
-        balance: profile.balance - product.price,
+        balance: profile.balance - totalPrice,
       });
 
-      // Create investment
+      // Create investment with quantity multiplied values
       await createInvestment({
         user_id: user.id,
         product_id: product.id,
-        product_name: product.name,
-        amount: product.price,
-        daily_income: product.daily_income,
-        total_income: product.total_income,
+        product_name: quantity > 1 ? `${product.name} (x${quantity})` : product.name,
+        amount: totalPrice,
+        daily_income: totalDailyIncome,
+        total_income: totalIncome,
         validity: product.validity,
         days_remaining: product.validity,
         total_earned: 0,
@@ -70,19 +75,20 @@ const InvestDialog = ({ open, onOpenChange, product, balance, onSuccess }: Inves
       await createTransaction({
         user_id: user.id,
         type: 'invest',
-        amount: product.price,
+        amount: totalPrice,
         status: 'success',
-        description: `Investasi ${product.name}`,
+        description: `Investasi ${product.name}${quantity > 1 ? ` (x${quantity})` : ''}`,
       });
 
       // Process referral commission for upline (commission on purchase)
-      await processReferralCommission(user.id, product.price);
+      await processReferralCommission(user.id, totalPrice);
 
       setIsLoading(false);
       setSuccess(true);
 
       setTimeout(() => {
         setSuccess(false);
+        setQuantity(1);
         onOpenChange(false);
         onSuccess();
       }, 2000);
@@ -97,7 +103,7 @@ const InvestDialog = ({ open, onOpenChange, product, balance, onSuccess }: Inves
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!isLoading) { setSuccess(false); onOpenChange(o); } }}>
+    <Dialog open={open} onOpenChange={(o) => { if (!isLoading) { setSuccess(false); setQuantity(1); onOpenChange(o); } }}>
       <DialogContent className="sm:max-w-md">
         {success ? (
           <div className="py-8 text-center space-y-4">
@@ -131,13 +137,54 @@ const InvestDialog = ({ open, onOpenChange, product, balance, onSuccess }: Inves
                     <h3 className="font-semibold text-foreground">{product.name}</h3>
                     <Badge variant="vip" className="text-xs mt-1">VIP {product.vip_level}</Badge>
                   </div>
-                  <p className="text-xl font-bold text-primary">{formatCurrency(product.price)}</p>
+                  <p className="text-lg font-bold text-primary">{formatCurrency(product.price)}/unit</p>
                 </div>
 
-                <div className="space-y-2 pt-3 border-t border-border">
+                {/* Quantity Selector */}
+                <div className="flex items-center justify-between py-3 border-t border-b border-border">
+                  <span className="text-sm font-medium text-foreground">Jumlah</span>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      disabled={quantity <= 1}
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={99}
+                      value={quantity}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 1;
+                        setQuantity(Math.max(1, Math.min(99, val)));
+                      }}
+                      className="w-16 h-8 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setQuantity(Math.min(99, quantity + 1))}
+                      disabled={quantity >= 99}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-3">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Penghasilan Harian</span>
-                    <span className="font-semibold text-success">{formatCurrency(product.daily_income)}</span>
+                    <span className="font-semibold text-success">
+                      {formatCurrency(totalDailyIncome)}
+                      {quantity > 1 && <span className="text-xs text-muted-foreground ml-1">({quantity}x)</span>}
+                    </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Masa Berlaku</span>
@@ -145,7 +192,10 @@ const InvestDialog = ({ open, onOpenChange, product, balance, onSuccess }: Inves
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Total Penghasilan</span>
-                    <span className="font-bold text-accent">{formatCurrency(product.total_income)}</span>
+                    <span className="font-bold text-accent">
+                      {formatCurrency(totalIncome)}
+                      {quantity > 1 && <span className="text-xs text-muted-foreground ml-1">({quantity}x)</span>}
+                    </span>
                   </div>
                   <div className="flex justify-between text-sm pt-2">
                     <span className="text-muted-foreground">ROI</span>
@@ -153,6 +203,14 @@ const InvestDialog = ({ open, onOpenChange, product, balance, onSuccess }: Inves
                       +{((product.total_income / product.price - 1) * 100).toFixed(0)}%
                     </span>
                   </div>
+                </div>
+              </div>
+
+              {/* Total Price */}
+              <div className="bg-primary/10 rounded-lg p-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-foreground">Total Investasi</span>
+                  <span className="text-2xl font-bold text-primary">{formatCurrency(totalPrice)}</span>
                 </div>
               </div>
 
@@ -169,7 +227,7 @@ const InvestDialog = ({ open, onOpenChange, product, balance, onSuccess }: Inves
                 </div>
                 {!canInvest && (
                   <p className="text-xs text-destructive mt-2">
-                    Butuh {formatCurrency(product.price - balance)} lagi untuk investasi ini
+                    Butuh {formatCurrency(totalPrice - balance)} lagi untuk investasi ini
                   </p>
                 )}
               </div>
@@ -180,7 +238,7 @@ const InvestDialog = ({ open, onOpenChange, product, balance, onSuccess }: Inves
                 onClick={handleInvest}
                 disabled={isLoading || !canInvest}
               >
-                {isLoading ? "Memproses..." : `Investasi ${formatCurrency(product.price)}`}
+                {isLoading ? "Memproses..." : `Investasi ${formatCurrency(totalPrice)}`}
               </Button>
             </div>
           </>
