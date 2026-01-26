@@ -114,8 +114,8 @@ const WithdrawDialog = ({ open, onOpenChange, balance, onSuccess }: WithdrawDial
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-md mx-auto max-h-[85vh] overflow-hidden flex flex-col">
-        <DialogHeader>
+      <DialogContent className="w-[95vw] max-w-md mx-auto max-h-[85vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-2">
           <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
             <ArrowDownRight className="w-4 h-4 sm:w-5 sm:h-5 text-accent" />
             Withdraw Saldo
@@ -125,44 +125,44 @@ const WithdrawDialog = ({ open, onOpenChange, balance, onSuccess }: WithdrawDial
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden flex flex-col gap-4 py-4">
-          {/* Balance Info */}
-          <div className="bg-muted rounded-lg p-4 flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">Saldo Tersedia</p>
-              <p className="text-xl font-bold text-foreground">{formatCurrency(balance)}</p>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setAmount(balance.toString())}
-            >
-              Withdraw Semua
-            </Button>
-          </div>
-
-          {/* Amount Input */}
-          <div className="space-y-2">
-            <Label>Jumlah Withdraw</Label>
-            <Input
-              type="number"
-              placeholder="Masukkan jumlah"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="text-lg font-semibold"
-            />
-          </div>
-
-          {/* Account Selection */}
-          <div className="space-y-3 border-t border-border pt-3">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <Building2 className="w-4 h-4" />
-              Pilih Rekening Tujuan
+        <ScrollArea className="flex-1 px-6">
+          <div className="flex flex-col gap-4 py-4 pb-2">
+            {/* Balance Info */}
+            <div className="bg-muted rounded-lg p-4 flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Saldo Tersedia</p>
+                <p className="text-xl font-bold text-foreground">{formatCurrency(balance)}</p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setAmount(balance.toString())}
+              >
+                Withdraw Semua
+              </Button>
             </div>
 
-            {accounts.length > 0 ? (
-              <ScrollArea className="max-h-[150px]">
-                <div className="space-y-2 pr-4">
+            {/* Amount Input */}
+            <div className="space-y-2">
+              <Label>Jumlah Withdraw</Label>
+              <Input
+                type="number"
+                placeholder="Masukkan jumlah"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="text-lg font-semibold"
+              />
+            </div>
+
+            {/* Account Selection */}
+            <div className="space-y-3 border-t border-border pt-3">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <Building2 className="w-4 h-4" />
+                Pilih Rekening Tujuan
+              </div>
+
+              {accounts.length > 0 ? (
+                <div className="space-y-2">
                   {accounts.map((account) => (
                     <button
                       key={account.id}
@@ -196,36 +196,39 @@ const WithdrawDialog = ({ open, onOpenChange, balance, onSuccess }: WithdrawDial
                     </button>
                   ))}
                 </div>
-              </ScrollArea>
-            ) : (
-              <div className="flex items-start gap-2 p-3 bg-destructive/10 rounded-lg">
-                <AlertCircle className="w-4 h-4 text-destructive mt-0.5" />
-                <p className="text-xs text-muted-foreground">
-                  Belum ada rekening tersimpan. Silakan tambahkan rekening di halaman <span className="text-primary font-medium">Profil → Account Bank</span>.
+              ) : (
+                <div className="flex items-start gap-2 p-3 bg-destructive/10 rounded-lg">
+                  <AlertCircle className="w-4 h-4 text-destructive mt-0.5" />
+                  <p className="text-xs text-muted-foreground">
+                    Belum ada rekening tersimpan. Silakan tambahkan rekening di halaman <span className="text-primary font-medium">Profil → Account Bank</span>.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Selected Account Summary */}
+            {selectedAccount && (
+              <div className="bg-success/10 rounded-lg p-3 border border-success/30">
+                <p className="text-xs text-muted-foreground mb-1">Withdraw ke:</p>
+                <p className="font-medium text-sm text-foreground">
+                  {selectedAccount.provider} - {selectedAccount.account_number}
                 </p>
+                <p className="text-xs text-muted-foreground">{selectedAccount.account_name}</p>
               </div>
             )}
-          </div>
 
-          {/* Selected Account Summary */}
-          {selectedAccount && (
-            <div className="bg-success/10 rounded-lg p-3 border border-success/30">
-              <p className="text-xs text-muted-foreground mb-1">Withdraw ke:</p>
-              <p className="font-medium text-sm text-foreground">
-                {selectedAccount.provider} - {selectedAccount.account_number}
+            {/* Info */}
+            <div className="flex items-start gap-2 p-3 bg-accent/10 rounded-lg">
+              <Clock className="w-4 h-4 text-accent mt-0.5" />
+              <p className="text-xs text-muted-foreground">
+                Withdraw memerlukan persetujuan admin. Proses 1-24 jam kerja.
               </p>
-              <p className="text-xs text-muted-foreground">{selectedAccount.account_name}</p>
             </div>
-          )}
-
-          {/* Info */}
-          <div className="flex items-start gap-2 p-3 bg-accent/10 rounded-lg">
-            <Clock className="w-4 h-4 text-accent mt-0.5" />
-            <p className="text-xs text-muted-foreground">
-              Withdraw memerlukan persetujuan admin. Proses 1-24 jam kerja.
-            </p>
           </div>
+        </ScrollArea>
 
+        {/* Fixed Button at Bottom */}
+        <div className="px-6 pb-6 pt-4 border-t border-border bg-background">
           <Button
             className="w-full"
             size="lg"
