@@ -3,20 +3,28 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, TrendingUp, Share2, Crown, Award } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { getTeamMembers, formatCurrency, Profile } from "@/lib/database";
+import { formatCurrency, Profile } from "@/lib/database";
+import { getMultiLevelTeam, MultiLevelTeam, COMMISSION_RATES, RABAT_RATES } from "@/lib/teamUtils";
 import ReferralDialog from "@/components/ReferralDialog";
 
 const Team = () => {
   const { profile, refreshProfile } = useAuth();
-  const [teamMembers, setTeamMembers] = useState<Profile[]>([]);
+  const [team, setTeam] = useState<MultiLevelTeam>({
+    levelA: [],
+    levelB: [],
+    levelC: [],
+    total: 0,
+  });
   const [referralOpen, setReferralOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("all");
 
   const loadData = async () => {
     if (profile?.referral_code) {
-      const members = await getTeamMembers(profile.referral_code);
-      setTeamMembers(members);
+      const teamData = await getMultiLevelTeam(profile.referral_code);
+      setTeam(teamData);
     }
     await refreshProfile();
   };
@@ -26,61 +34,74 @@ const Team = () => {
   }, [profile?.referral_code]);
 
   const currentVipLevel = profile?.vip_level || 1;
-  const totalReferrals = teamMembers.length;
+  const totalReferrals = team.total;
 
-  // VIP requirements
-  const vipRequirements = [0, 0, 5, 15, 30, 50]; // referrals needed for each VIP level
+  // VIP requirements based on total team members (all levels)
+  const vipRequirements = [0, 0, 5, 15, 30, 50];
   const nextVipLevel = Math.min(currentVipLevel + 1, 5);
   const requiredReferrals = vipRequirements[nextVipLevel];
   const progressPercentage = requiredReferrals > 0 ? Math.min((totalReferrals / requiredReferrals) * 100, 100) : 100;
 
-  const teamTiers = [
+  const teamLevels = [
     {
-      tier: "C",
-      name: "Bronze Team",
-      commission: 2,
-      rabat: 2,
-      requiredMembers: 5,
-      currentMembers: totalReferrals,
-      color: "text-amber-700",
-      bgColor: "bg-amber-900/20",
-      achieved: totalReferrals >= 5,
-    },
-    {
-      tier: "B",
-      name: "Silver Team",
-      commission: 3,
-      rabat: 3,
-      requiredMembers: 15,
-      currentMembers: totalReferrals,
-      color: "text-gray-400",
-      bgColor: "bg-gray-800/30",
-      achieved: totalReferrals >= 15,
-    },
-    {
-      tier: "A",
-      name: "Gold Team",
-      commission: 10,
-      rabat: 5,
-      requiredMembers: 30,
-      currentMembers: totalReferrals,
+      level: "A",
+      name: "Level A",
+      description: "Bawahan Langsung",
+      commission: COMMISSION_RATES.A,
+      rabat: RABAT_RATES.A,
+      members: team.levelA,
       color: "text-vip-gold",
       bgColor: "bg-vip-gold/10",
-      achieved: totalReferrals >= 30,
+      badgeColor: "bg-vip-gold text-white",
+    },
+    {
+      level: "B",
+      name: "Level B",
+      description: "Generasi Kedua",
+      commission: COMMISSION_RATES.B,
+      rabat: RABAT_RATES.B,
+      members: team.levelB,
+      color: "text-gray-400",
+      bgColor: "bg-gray-800/30",
+      badgeColor: "bg-gray-500 text-white",
+    },
+    {
+      level: "C",
+      name: "Level C",
+      description: "Generasi Ketiga",
+      commission: COMMISSION_RATES.C,
+      rabat: RABAT_RATES.C,
+      members: team.levelC,
+      color: "text-amber-700",
+      bgColor: "bg-amber-900/20",
+      badgeColor: "bg-amber-700 text-white",
     },
   ];
 
-  const referralStats = {
-    totalEarnings: profile?.team_income || 0,
-    activeMembers: teamMembers.length,
-  };
+  const renderMemberCard = (member: Profile, level: string, badgeColor: string) => (
+    <div
+      key={member.id}
+      className="flex items-center justify-between p-3 bg-muted rounded-lg"
+    >
+      <div>
+        <div className="flex items-center gap-2">
+          <p className="font-semibold text-sm text-foreground">{member.name}</p>
+          <Badge className={`text-xs ${badgeColor}`}>Level {level}</Badge>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          VIP {member.vip_level} • Bergabung {new Date(member.created_at).toLocaleDateString('id-ID')}
+        </p>
+      </div>
+      <Badge variant="success" className="text-xs">Aktif</Badge>
+    </div>
+  );
 
   return (
     <div className="space-y-6 p-4 pt-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-heading font-bold text-foreground mb-1">Tim & Referral</h1>
-        <p className="text-sm text-muted-foreground">Kembangkan tim dan tingkatkan level VIP</p>
+        <p className="text-sm text-muted-foreground">Kembangkan tim 3 level dan tingkatkan VIP</p>
       </div>
 
       {/* VIP Progress Card */}
@@ -104,14 +125,14 @@ const Team = () => {
           {currentVipLevel < 5 ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Referral Progress</span>
+                <span className="text-muted-foreground">Total Anggota Tim (A+B+C)</span>
                 <span className="font-bold text-foreground">
                   {totalReferrals} / {requiredReferrals}
                 </span>
               </div>
               <Progress value={progressPercentage} className="h-3" />
               <p className="text-xs text-muted-foreground text-center">
-                Ajak {Math.max(0, requiredReferrals - totalReferrals)} teman lagi untuk naik ke VIP {nextVipLevel}
+                Ajak {Math.max(0, requiredReferrals - totalReferrals)} orang lagi untuk naik ke VIP {nextVipLevel}
               </p>
             </div>
           ) : (
@@ -132,135 +153,121 @@ const Team = () => {
         </CardContent>
       </Card>
 
-      {/* Referral Stats */}
+      {/* Team Stats by Level */}
       <div className="grid grid-cols-3 gap-3">
+        {teamLevels.map((level) => (
+          <Card key={level.level} className="shadow-card">
+            <CardContent className="p-3 text-center">
+              <p className={`text-xs font-semibold mb-1 ${level.color}`}>{level.name}</p>
+              <p className="text-lg font-bold text-foreground">{level.members.length}</p>
+              <p className="text-xs text-muted-foreground">orang</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Income Stats */}
+      <div className="grid grid-cols-2 gap-3">
         <Card className="shadow-card">
           <CardContent className="p-3 text-center">
-            <p className="text-xs text-muted-foreground mb-1">Komisi</p>
+            <p className="text-xs text-muted-foreground mb-1">Total Komisi</p>
             <p className="text-sm font-bold text-primary">{formatCurrency(profile?.team_income || 0)}</p>
           </CardContent>
         </Card>
         <Card className="shadow-card">
           <CardContent className="p-3 text-center">
-            <p className="text-xs text-muted-foreground mb-1">Rabat</p>
+            <p className="text-xs text-muted-foreground mb-1">Total Rabat</p>
             <p className="text-sm font-bold text-vip-gold">{formatCurrency(profile?.rabat_income || 0)}</p>
           </CardContent>
         </Card>
-        <Card className="shadow-card">
-          <CardContent className="p-3 text-center">
-            <p className="text-xs text-muted-foreground mb-1">Anggota</p>
-            <p className="text-sm font-bold text-success">{teamMembers.length}</p>
-          </CardContent>
-        </Card>
       </div>
 
-      {/* Team Tiers */}
-      <div>
-        <div className="flex items-center gap-2 mb-4">
-          <Award className="w-5 h-5 text-primary" />
-          <h2 className="text-lg font-heading font-bold text-foreground">Tingkatan Tim</h2>
-        </div>
-
-        <div className="space-y-3">
-          {teamTiers.map((tier) => (
-            <Card
-              key={tier.tier}
-              className={`shadow-card ${tier.achieved ? "border-2 border-success" : "opacity-75"}`}
-            >
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-base font-bold mb-1">
-                      Tim {tier.tier} - {tier.name}
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      Komisi {tier.commission}% (pembelian) • Rabat {tier.rabat}% (profit harian)
-                    </p>
-                  </div>
-                  {tier.achieved && (
-                    <Badge variant="success" className="text-xs">
-                      Achieved
-                    </Badge>
-                  )}
+      {/* Commission/Rabat Rates Info */}
+      <Card className="shadow-card">
+        <CardHeader className="pb-2">
+          <div className="flex items-center gap-2">
+            <Award className="w-5 h-5 text-primary" />
+            <CardTitle className="text-base">Struktur Komisi & Rabat</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {teamLevels.map((level) => (
+            <div key={level.level} className={`${level.bgColor} rounded-lg p-3`}>
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                  <Badge className={level.badgeColor}>{level.level}</Badge>
+                  <span className={`text-sm font-semibold ${level.color}`}>
+                    {level.name}
+                  </span>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div>
-                    <div className="flex items-center justify-between text-sm mb-2">
-                      <span className="text-muted-foreground">Progress Anggota</span>
-                      <span className="font-bold text-foreground">
-                        {Math.min(tier.currentMembers, tier.requiredMembers)} / {tier.requiredMembers}
-                      </span>
-                    </div>
-                    <Progress
-                      value={Math.min((tier.currentMembers / tier.requiredMembers) * 100, 100)}
-                      className="h-2"
-                    />
-                  </div>
-
-                  <div className={`${tier.bgColor} rounded-lg p-3`}>
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-2">
-                        <TrendingUp className={`w-4 h-4 ${tier.color}`} />
-                        <span className={`text-sm font-semibold ${tier.color}`}>
-                          Komisi {tier.commission}%
-                        </span>
-                      </div>
-                      <span className={`text-sm font-semibold ${tier.color}`}>
-                        Rabat {tier.rabat}%
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {tier.requiredMembers - tier.currentMembers > 0
-                        ? `${tier.requiredMembers - tier.currentMembers} anggota lagi`
-                        : "Tercapai!"}
-                    </p>
-                  </div>
+                <span className="text-xs text-muted-foreground">{level.description}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm mt-2">
+                <div className="flex items-center gap-1">
+                  <TrendingUp className="w-3 h-3 text-primary" />
+                  <span className="text-muted-foreground">Komisi:</span>
+                  <span className="font-bold text-primary">{level.commission}%</span>
                 </div>
-              </CardContent>
-            </Card>
+                <div className="flex items-center gap-1">
+                  <span className="text-muted-foreground">Rabat:</span>
+                  <span className="font-bold text-vip-gold">{level.rabat}%</span>
+                </div>
+              </div>
+            </div>
           ))}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Team Members */}
       <Card className="shadow-card">
         <CardHeader>
           <div className="flex items-center gap-2">
             <Users className="w-5 h-5 text-primary" />
-            <CardTitle className="text-base">Anggota Tim Anda</CardTitle>
+            <CardTitle className="text-base">Anggota Tim ({team.total})</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
-          {teamMembers.length === 0 ? (
-            <div className="text-center py-8">
-              <Users className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-muted-foreground">Belum ada anggota tim</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Bagikan kode referral untuk mengajak teman
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {teamMembers.map((member) => (
-                <div
-                  key={member.id}
-                  className="flex items-center justify-between p-3 bg-muted rounded-lg"
-                >
-                  <div>
-                    <p className="font-semibold text-sm text-foreground">{member.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      VIP {member.vip_level} • Bergabung {new Date(member.created_at).toLocaleDateString('id-ID')}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <Badge variant="success" className="text-xs">Aktif</Badge>
-                  </div>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-4 mb-4">
+              <TabsTrigger value="all">Semua</TabsTrigger>
+              <TabsTrigger value="A">Level A</TabsTrigger>
+              <TabsTrigger value="B">Level B</TabsTrigger>
+              <TabsTrigger value="C">Level C</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="all" className="mt-0">
+              {team.total === 0 ? (
+                <div className="text-center py-8">
+                  <Users className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+                  <p className="text-muted-foreground">Belum ada anggota tim</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Bagikan kode referral untuk mengajak teman
+                  </p>
                 </div>
-              ))}
-            </div>
-          )}
+              ) : (
+                <div className="space-y-3 max-h-80 overflow-y-auto">
+                  {team.levelA.map((member) => renderMemberCard(member, "A", teamLevels[0].badgeColor))}
+                  {team.levelB.map((member) => renderMemberCard(member, "B", teamLevels[1].badgeColor))}
+                  {team.levelC.map((member) => renderMemberCard(member, "C", teamLevels[2].badgeColor))}
+                </div>
+              )}
+            </TabsContent>
+            
+            {teamLevels.map((level, idx) => (
+              <TabsContent key={level.level} value={level.level} className="mt-0">
+                {level.members.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Users className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+                    <p className="text-muted-foreground">Belum ada anggota {level.name}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 max-h-80 overflow-y-auto">
+                    {level.members.map((member) => renderMemberCard(member, level.level, level.badgeColor))}
+                  </div>
+                )}
+              </TabsContent>
+            ))}
+          </Tabs>
         </CardContent>
       </Card>
 
@@ -268,9 +275,9 @@ const Team = () => {
       <Card className="bg-gradient-primary text-primary-foreground border-0 shadow-glow">
         <CardContent className="p-6 text-center">
           <Crown className="w-12 h-12 mx-auto mb-3 opacity-90" />
-          <h3 className="font-bold text-lg mb-2">Raih Komisi Lebih Tinggi!</h3>
+          <h3 className="font-bold text-lg mb-2">Raih Komisi 3 Level!</h3>
           <p className="text-sm opacity-90 mb-4">
-            Ajak lebih banyak teman dan dapatkan komisi hingga 10%
+            Ajak teman dan dapatkan komisi dari 3 generasi bawahan
           </p>
           <Button variant="secondary" className="font-semibold" onClick={() => setReferralOpen(true)}>
             Bagikan Sekarang
