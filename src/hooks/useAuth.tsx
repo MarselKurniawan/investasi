@@ -26,8 +26,8 @@ interface AuthContextType {
   profile: Profile | null;
   isAdmin: boolean;
   loading: boolean;
-  signUp: (email: string, password: string, name?: string, referralCode?: string) => Promise<{ error: Error | null }>;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signUp: (phone: string, password: string, name?: string, referralCode?: string, email?: string) => Promise<{ error: Error | null }>;
+  signIn: (identifier: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -125,16 +125,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, name?: string, referralCode?: string) => {
+  const signUp = async (phone: string, password: string, name?: string, referralCode?: string, email?: string) => {
     const redirectUrl = `${window.location.origin}/`;
+    // Generate dummy email from phone if no email provided
+    const authEmail = email && email.trim() ? email : `${phone.replace(/[^0-9]/g, '')}@wa.investpro.id`;
     
     const { error } = await supabase.auth.signUp({
-      email,
+      email: authEmail,
       password,
       options: {
         emailRedirectTo: redirectUrl,
         data: {
-          name: name || email.split('@')[0],
+          name: name || phone,
+          phone: phone,
           referred_by: referralCode || '',
         }
       }
@@ -144,23 +147,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { error };
     }
 
-    // If there's a referral code, update the profile
-    if (referralCode) {
-      setTimeout(async () => {
-        const { data: { user: newUser } } = await supabase.auth.getUser();
-        if (newUser) {
-          await supabase
-            .from('profiles')
-            .update({ referred_by: referralCode })
-            .eq('user_id', newUser.id);
-        }
-      }, 1000);
-    }
+    // Update profile with phone and referral code
+    setTimeout(async () => {
+      const { data: { user: newUser } } = await supabase.auth.getUser();
+      if (newUser) {
+        const updates: Record<string, string> = { phone };
+        if (referralCode) updates.referred_by = referralCode;
+        await supabase
+          .from('profiles')
+          .update(updates)
+          .eq('user_id', newUser.id);
+      }
+    }, 1000);
 
     return { error: null };
   };
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (identifier: string, password: string) => {
+    // If identifier looks like a phone number, convert to dummy email
+    const isPhone = /^[0-9+]/.test(identifier) && !identifier.includes('@');
+    const email = isPhone ? `${identifier.replace(/[^0-9]/g, '')}@wa.investpro.id` : identifier;
+    
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
