@@ -7,11 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { Eye, EyeOff, TrendingUp, Shield, Users, Sparkles, Zap } from "lucide-react";
+import { Eye, EyeOff, TrendingUp, Shield, Users, Sparkles, Zap, Phone, Mail } from "lucide-react";
 import { z } from "zod";
 
-const emailSchema = z.string().email("Format email tidak valid");
+const phoneSchema = z.string().min(10, "Nomor WhatsApp minimal 10 digit").regex(/^[0-9+]+$/, "Format nomor tidak valid");
 const passwordSchema = z.string().min(6, "Password minimal 6 karakter");
+const emailSchema = z.string().email("Format email tidak valid").optional().or(z.literal(""));
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -22,7 +23,6 @@ const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Check if already logged in
   useEffect(() => {
     if (user && !loading) {
       navigate("/");
@@ -30,11 +30,12 @@ const Auth = () => {
   }, [user, loading, navigate]);
 
   // Login form state
-  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPhone, setLoginPhone] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
 
   // Register form state
   const [registerName, setRegisterName] = useState("");
+  const [registerPhone, setRegisterPhone] = useState("");
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
   const [registerConfirmPassword, setRegisterConfirmPassword] = useState("");
@@ -44,7 +45,7 @@ const Auth = () => {
     e.preventDefault();
     
     try {
-      emailSchema.parse(loginEmail);
+      phoneSchema.parse(loginPhone);
       passwordSchema.parse(loginPassword);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -58,14 +59,14 @@ const Auth = () => {
     }
 
     setIsLoading(true);
-    const { error } = await signIn(loginEmail, loginPassword);
+    const { error } = await signIn(loginPhone, loginPassword);
     setIsLoading(false);
 
     if (error) {
       toast({
         title: "Login Gagal",
         description: error.message === "Invalid login credentials" 
-          ? "Email atau password salah" 
+          ? "Nomor WhatsApp atau password salah" 
           : error.message,
         variant: "destructive",
       });
@@ -83,8 +84,9 @@ const Auth = () => {
     e.preventDefault();
     
     try {
-      emailSchema.parse(registerEmail);
+      phoneSchema.parse(registerPhone);
       passwordSchema.parse(registerPassword);
+      if (registerEmail) emailSchema.parse(registerEmail);
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast({
@@ -115,13 +117,13 @@ const Auth = () => {
     }
 
     setIsLoading(true);
-    const { error } = await signUp(registerEmail, registerPassword, registerName, referralCode || undefined);
+    const { error } = await signUp(registerPhone, registerPassword, registerName, referralCode || undefined, registerEmail || undefined);
     setIsLoading(false);
 
     if (error) {
       let errorMessage = error.message;
       if (error.message.includes("already registered")) {
-        errorMessage = "Email sudah terdaftar. Silakan login.";
+        errorMessage = "Nomor sudah terdaftar. Silakan login.";
       }
       toast({
         title: "Registrasi Gagal",
@@ -150,16 +152,13 @@ const Auth = () => {
     <div className="min-h-screen bg-background flex relative overflow-hidden">
       {/* Background decorations */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-0 w-80 h-80 bg-accent/20 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 left-0 w-64 h-64 bg-vip-gold/10 rounded-full blur-3xl" />
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-0 w-80 h-80 bg-accent/10 rounded-full blur-3xl" />
       </div>
 
       {/* Left side - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary/20 via-card to-accent/20 p-12 flex-col justify-between relative">
-        {/* Background decorations */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-80 h-80 bg-vip-gold/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary/10 via-card to-accent/10 p-12 flex-col justify-between relative">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
 
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-2">
@@ -173,16 +172,12 @@ const Auth = () => {
 
         <div className="relative z-10 space-y-8">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center neon-pulse">
+            <div className="w-12 h-12 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center">
               <TrendingUp className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h3 className="text-foreground font-semibold text-lg">
-                Return Tinggi
-              </h3>
-              <p className="text-muted-foreground text-sm">
-                Dapatkan keuntungan hingga 10% per hari
-              </p>
+              <h3 className="text-foreground font-semibold text-lg">Return Tinggi</h3>
+              <p className="text-muted-foreground text-sm">Dapatkan keuntungan hingga 10% per hari</p>
             </div>
           </div>
 
@@ -191,34 +186,24 @@ const Auth = () => {
               <Shield className="w-6 h-6 text-success" />
             </div>
             <div>
-              <h3 className="text-foreground font-semibold text-lg">
-                Aman & Terpercaya
-              </h3>
-              <p className="text-muted-foreground text-sm">
-                Dilindungi sistem keamanan berlapis
-              </p>
+              <h3 className="text-foreground font-semibold text-lg">Aman & Terpercaya</h3>
+              <p className="text-muted-foreground text-sm">Dilindungi sistem keamanan berlapis</p>
             </div>
           </div>
 
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-vip-gold/20 border border-vip-gold/30 flex items-center justify-center gold-pulse">
-              <Users className="w-6 h-6 text-vip-gold" />
+            <div className="w-12 h-12 rounded-xl bg-secondary/20 border border-secondary/30 flex items-center justify-center">
+              <Users className="w-6 h-6 text-secondary" />
             </div>
             <div>
-              <h3 className="text-foreground font-semibold text-lg">
-                Bonus Referral
-              </h3>
-              <p className="text-muted-foreground text-sm">
-                Ajak teman dan dapatkan komisi hingga 10%
-              </p>
+              <h3 className="text-foreground font-semibold text-lg">Bonus Referral</h3>
+              <p className="text-muted-foreground text-sm">Ajak teman dan dapatkan komisi hingga 10%</p>
             </div>
           </div>
         </div>
 
         <div className="relative z-10">
-          <p className="text-muted-foreground text-sm">
-            © 2024 InvestPro. All rights reserved.
-          </p>
+          <p className="text-muted-foreground text-sm">© 2024 InvestPro. All rights reserved.</p>
         </div>
       </div>
 
@@ -229,24 +214,18 @@ const Auth = () => {
           <div className="lg:hidden text-center mb-8">
             <div className="flex items-center justify-center gap-2 mb-1">
               <Sparkles className="w-7 h-7 text-primary" />
-              <h1 className="font-heading text-3xl font-bold text-foreground">
-                InvestPro
-              </h1>
+              <h1 className="font-heading text-3xl font-bold text-foreground">InvestPro</h1>
             </div>
-            <p className="text-muted-foreground text-sm">
-              Platform Investasi Terpercaya
-            </p>
+            <p className="text-muted-foreground text-sm">Platform Investasi Terpercaya</p>
           </div>
 
-          <Card className="border-primary/20 shadow-glow">
+          <Card className="border-border/50 shadow-card">
             <CardHeader className="space-y-1 pb-4">
               <CardTitle className="text-2xl font-heading flex items-center gap-2">
                 <Zap className="w-6 h-6 text-primary" />
                 Selamat Datang
               </CardTitle>
-              <CardDescription>
-                Masuk atau daftar untuk mulai berinvestasi
-              </CardDescription>
+              <CardDescription>Masuk atau daftar untuk mulai berinvestasi</CardDescription>
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="login" className="w-full">
@@ -259,13 +238,16 @@ const Auth = () => {
                 <TabsContent value="login">
                   <form onSubmit={handleLogin} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="login-email">Email</Label>
+                      <Label htmlFor="login-phone" className="flex items-center gap-1.5">
+                        <Phone className="w-3.5 h-3.5" />
+                        Nomor WhatsApp
+                      </Label>
                       <Input
-                        id="login-email"
-                        type="email"
-                        placeholder="nama@email.com"
-                        value={loginEmail}
-                        onChange={(e) => setLoginEmail(e.target.value)}
+                        id="login-phone"
+                        type="tel"
+                        placeholder="08123456789"
+                        value={loginPhone}
+                        onChange={(e) => setLoginPhone(e.target.value)}
                         required
                         className="bg-muted/50"
                       />
@@ -288,21 +270,12 @@ const Auth = () => {
                           onClick={() => setShowPassword(!showPassword)}
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                         >
-                          {showPassword ? (
-                            <EyeOff className="w-4 h-4" />
-                          ) : (
-                            <Eye className="w-4 h-4" />
-                          )}
+                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                       </div>
                     </div>
 
-                    <Button
-                      type="submit"
-                      className="w-full neon-pulse"
-                      size="lg"
-                      disabled={isLoading}
-                    >
+                    <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
                       {isLoading ? "Memproses..." : "Masuk"}
                     </Button>
                   </form>
@@ -325,14 +298,32 @@ const Auth = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="register-email">Email</Label>
+                      <Label htmlFor="register-phone" className="flex items-center gap-1.5">
+                        <Phone className="w-3.5 h-3.5" />
+                        Nomor WhatsApp
+                      </Label>
+                      <Input
+                        id="register-phone"
+                        type="tel"
+                        placeholder="08123456789"
+                        value={registerPhone}
+                        onChange={(e) => setRegisterPhone(e.target.value)}
+                        required
+                        className="bg-muted/50"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="register-email" className="flex items-center gap-1.5">
+                        <Mail className="w-3.5 h-3.5" />
+                        Email <span className="text-muted-foreground text-xs">(Opsional)</span>
+                      </Label>
                       <Input
                         id="register-email"
                         type="email"
                         placeholder="nama@email.com"
                         value={registerEmail}
                         onChange={(e) => setRegisterEmail(e.target.value)}
-                        required
                         className="bg-muted/50"
                       />
                     </div>
@@ -355,27 +346,19 @@ const Auth = () => {
                           onClick={() => setShowPassword(!showPassword)}
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                         >
-                          {showPassword ? (
-                            <EyeOff className="w-4 h-4" />
-                          ) : (
-                            <Eye className="w-4 h-4" />
-                          )}
+                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="register-confirm-password">
-                        Konfirmasi Password
-                      </Label>
+                      <Label htmlFor="register-confirm-password">Konfirmasi Password</Label>
                       <Input
                         id="register-confirm-password"
                         type="password"
                         placeholder="Ulangi password"
                         value={registerConfirmPassword}
-                        onChange={(e) =>
-                          setRegisterConfirmPassword(e.target.value)
-                        }
+                        onChange={(e) => setRegisterConfirmPassword(e.target.value)}
                         required
                         className="bg-muted/50"
                       />
@@ -383,8 +366,7 @@ const Auth = () => {
 
                     <div className="space-y-2">
                       <Label htmlFor="referral-code">
-                        Kode Referral{" "}
-                        <span className="text-muted-foreground">(Opsional)</span>
+                        Kode Referral <span className="text-muted-foreground">(Opsional)</span>
                       </Label>
                       <Input
                         id="referral-code"
@@ -396,12 +378,7 @@ const Auth = () => {
                       />
                     </div>
 
-                    <Button
-                      type="submit"
-                      className="w-full neon-pulse"
-                      size="lg"
-                      disabled={isLoading}
-                    >
+                    <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
                       {isLoading ? "Memproses..." : "Daftar Sekarang"}
                     </Button>
                   </form>
