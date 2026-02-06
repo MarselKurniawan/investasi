@@ -2,11 +2,12 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowUpRight, ArrowDownRight, Wallet, LogOut, ShieldCheck, Sparkles, Gift, Bell, PartyPopper, Coins } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Wallet, LogOut, ShieldCheck, Sparkles, Gift, Bell, PartyPopper, Coins, Sun, Moon } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { getProducts, getInvestments, formatCurrency, canClaimToday, updateInvestment, updateProfile, createTransaction, processReferralRabat, Product, Investment } from "@/lib/database";
+import { useTheme } from "@/hooks/useTheme";
 import RechargeDialog from "@/components/RechargeDialog";
 import WithdrawDialog from "@/components/WithdrawDialog";
 import InvestDialog from "@/components/InvestDialog";
@@ -16,6 +17,7 @@ const Home = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, profile, isAdmin, signOut, refreshProfile } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   
   const [investments, setInvestments] = useState<Investment[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -149,10 +151,13 @@ const Home = () => {
           </h1>
           <p className="text-sm text-muted-foreground">Kelola investasi Anda dengan mudah</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <Badge variant="vip" className="text-sm px-3 py-1 gold-pulse">
             VIP {vipLevel}
           </Badge>
+          <Button variant="ghost" size="icon" onClick={toggleTheme} className="hover:bg-muted">
+            {theme === "light" ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+          </Button>
           {isAdmin && (
             <Button variant="ghost" size="icon" onClick={() => navigate("/admin")} className="hover:bg-primary/20">
               <ShieldCheck className="w-5 h-5 text-primary" />
