@@ -178,25 +178,25 @@ const Profile = () => {
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-muted/50 rounded-lg p-3 border border-border/50">
               <p className="text-xs text-muted-foreground">Saldo</p>
-              <p className="text-lg font-bold text-primary drop-shadow-[0_0_8px_hsl(185,100%,50%)]">
+              <p className="text-lg font-bold text-primary">
                 {formatCurrency(profile.balance)}
               </p>
             </div>
             <div className="bg-muted/50 rounded-lg p-3 border border-border/50">
               <p className="text-xs text-muted-foreground">Total Pendapatan</p>
-              <p className="text-lg font-bold text-success drop-shadow-[0_0_8px_hsl(145,100%,50%)]">
+              <p className="text-lg font-bold text-success">
                 {formatCurrency(profile.total_income)}
               </p>
             </div>
             <div className="bg-muted/50 rounded-lg p-3 border border-border/50">
               <p className="text-xs text-muted-foreground">Komisi Rate</p>
-              <p className="text-lg font-bold text-accent drop-shadow-[0_0_8px_hsl(330,100%,60%)]">
+              <p className="text-lg font-bold text-accent">
                 {(commissionRate * 100).toFixed(0)}%
               </p>
             </div>
             <div className="bg-muted/50 rounded-lg p-3 border border-border/50">
               <p className="text-xs text-muted-foreground">Kode Referral</p>
-              <p className="text-lg font-bold text-vip-gold drop-shadow-[0_0_8px_hsl(45,100%,55%)]">
+              <p className="text-lg font-bold text-vip-gold">
                 {profile.referral_code}
               </p>
             </div>

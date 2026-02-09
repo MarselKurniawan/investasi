@@ -178,7 +178,7 @@ const Home = () => {
             <Wallet className="w-5 h-5 text-primary" />
             <span className="text-sm text-muted-foreground font-medium">Saldo Tersedia</span>
           </div>
-          <p className="text-3xl font-heading font-bold text-primary mb-4 drop-shadow-[0_0_15px_hsl(185,100%,50%)]">
+          <p className="text-3xl font-heading font-bold text-primary mb-4">
             {formatCurrency(balance)}
           </p>
 
@@ -224,7 +224,7 @@ const Home = () => {
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-lg font-bold text-success drop-shadow-[0_0_10px_hsl(145,100%,50%)]">
+                <p className="text-lg font-bold text-success">
                   +{formatCurrency(totalClaimable)}
                 </p>
                 <Button 

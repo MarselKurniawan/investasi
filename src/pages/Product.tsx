@@ -111,7 +111,7 @@ const ProductPage = () => {
                       <p className="text-xs text-muted-foreground mb-3">{product.description}</p>
 
                       {/* Price */}
-                      <p className="text-xl font-bold text-primary drop-shadow-[0_0_10px_hsl(185,100%,50%)] mb-3">
+                      <p className="text-xl font-bold text-primary mb-3">
                         {formatCurrency(product.price)}
                       </p>
 
