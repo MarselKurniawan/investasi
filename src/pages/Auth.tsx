@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Eye, EyeOff, TrendingUp, Shield, Users, Sparkles, Zap, Phone, Mail, Loader2 } from "lucide-react";
 import { z } from "zod";
+import ForgotPasswordFlow from "@/components/ForgotPasswordFlow";
 
 const phoneSchema = z.string().min(10, "Nomor WhatsApp minimal 10 digit").regex(/^[0-9+]+$/, "Format nomor tidak valid");
 const passwordSchema = z.string().min(6, "Password minimal 6 karakter");
@@ -23,6 +24,7 @@ const Auth = () => {
   
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   // OTP verification state
   const [otpStep, setOtpStep] = useState<'form' | 'otp'>('form');
@@ -274,6 +276,9 @@ const Auth = () => {
               <CardDescription>Masuk atau daftar untuk mulai berinvestasi</CardDescription>
             </CardHeader>
             <CardContent>
+              {showForgotPassword ? (
+                <ForgotPasswordFlow onBack={() => setShowForgotPassword(false)} />
+              ) : (
               <Tabs defaultValue="login" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 mb-6 bg-muted">
                   <TabsTrigger value="login">Masuk</TabsTrigger>
@@ -324,6 +329,16 @@ const Auth = () => {
                     <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
                       {isLoading ? "Memproses..." : "Masuk"}
                     </Button>
+
+                    <div className="text-center">
+                      <button
+                        type="button"
+                        onClick={() => setShowForgotPassword(true)}
+                        className="text-sm text-primary hover:text-primary/80 transition-colors"
+                      >
+                        Lupa Password?
+                      </button>
+                    </div>
                   </form>
                 </TabsContent>
 
@@ -405,6 +420,7 @@ const Auth = () => {
                   )}
                 </TabsContent>
               </Tabs>
+              )}
             </CardContent>
           </Card>
         </div>
