@@ -164,15 +164,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signIn = async (identifier: string, password: string) => {
-    // If identifier looks like a phone number, convert to dummy email
     const isPhone = /^[0-9+]/.test(identifier) && !identifier.includes('@');
-    const email = isPhone ? `${identifier.replace(/[^0-9]/g, '')}@wa.investpro.id` : identifier;
     
+    if (isPhone) {
+      // First try dummy email format
+      const dummyEmail = `${identifier.replace(/[^0-9]/g, '')}@wa.investpro.id`;
+      const { error: dummyError } = await supabase.auth.signInWithPassword({
+        email: dummyEmail,
+        password,
+      });
+      
+      if (!dummyError) return { error: null };
+      
+      // If failed, look up real email from profiles by phone number
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('phone', identifier)
+        .maybeSingle();
+      
+      if (profileData?.email) {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: profileData.email,
+          password,
+        });
+        return { error };
+      }
+      
+      return { error: dummyError };
+    }
+    
+    // Direct email login
     const { error } = await supabase.auth.signInWithPassword({
-      email,
+      email: identifier,
       password,
     });
-
     return { error };
   };
 
