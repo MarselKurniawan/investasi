@@ -7,7 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { Eye, EyeOff, TrendingUp, Shield, Users, Sparkles, Zap, Phone, Mail } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Eye, EyeOff, TrendingUp, Shield, Users, Sparkles, Zap, Phone, Mail, Loader2 } from "lucide-react";
 import { z } from "zod";
 
 const phoneSchema = z.string().min(10, "Nomor WhatsApp minimal 10 digit").regex(/^[0-9+]+$/, "Format nomor tidak valid");
@@ -23,11 +24,24 @@ const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // OTP verification state
+  const [otpStep, setOtpStep] = useState<'form' | 'otp'>('form');
+  const [otpCode, setOtpCode] = useState("");
+  const [otpSending, setOtpSending] = useState(false);
+  const [otpCountdown, setOtpCountdown] = useState(0);
+
   useEffect(() => {
     if (user && !loading) {
       navigate("/");
     }
   }, [user, loading, navigate]);
+
+  // OTP countdown timer
+  useEffect(() => {
+    if (otpCountdown <= 0) return;
+    const timer = setTimeout(() => setOtpCountdown(otpCountdown - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [otpCountdown]);
 
   // Login form state
   const [loginPhone, setLoginPhone] = useState("");
@@ -80,64 +94,96 @@ const Auth = () => {
     navigate("/");
   };
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleSendOtp = async () => {
     try {
       phoneSchema.parse(registerPhone);
       passwordSchema.parse(registerPassword);
       if (registerEmail) emailSchema.parse(registerEmail);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        toast({
-          title: "Error",
-          description: error.errors[0].message,
-          variant: "destructive",
-        });
+        toast({ title: "Error", description: error.errors[0].message, variant: "destructive" });
         return;
       }
     }
 
     if (registerPassword !== registerConfirmPassword) {
-      toast({
-        title: "Registrasi Gagal",
-        description: "Password tidak cocok",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Password tidak cocok", variant: "destructive" });
+      return;
+    }
+    if (!registerName.trim()) {
+      toast({ title: "Error", description: "Nama harus diisi", variant: "destructive" });
       return;
     }
 
-    if (!registerName.trim()) {
-      toast({
-        title: "Registrasi Gagal",
-        description: "Nama harus diisi",
-        variant: "destructive",
+    setOtpSending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-otp", {
+        body: { phone: registerPhone },
       });
+
+      if (error || !data?.success) {
+        toast({
+          title: "Gagal Kirim OTP",
+          description: data?.error || error?.message || "Gagal mengirim kode OTP",
+          variant: "destructive",
+        });
+        setOtpSending(false);
+        return;
+      }
+
+      toast({ title: "OTP Terkirim!", description: "Cek WhatsApp Anda untuk kode verifikasi" });
+      setOtpStep('otp');
+      setOtpCountdown(60);
+    } catch (err) {
+      toast({ title: "Error", description: "Gagal mengirim OTP", variant: "destructive" });
+    }
+    setOtpSending(false);
+  };
+
+  const handleVerifyAndRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (otpCode.length !== 6) {
+      toast({ title: "Error", description: "Masukkan 6 digit kode OTP", variant: "destructive" });
       return;
     }
 
     setIsLoading(true);
-    const { error } = await signUp(registerPhone, registerPassword, registerName, referralCode || undefined, registerEmail || undefined);
-    setIsLoading(false);
-
-    if (error) {
-      let errorMessage = error.message;
-      if (error.message.includes("already registered")) {
-        errorMessage = "Nomor sudah terdaftar. Silakan login.";
-      }
-      toast({
-        title: "Registrasi Gagal",
-        description: errorMessage,
-        variant: "destructive",
+    try {
+      // Verify OTP
+      const { data, error: verifyError } = await supabase.functions.invoke("verify-otp", {
+        body: { phone: registerPhone, code: otpCode },
       });
-      return;
-    }
 
-    toast({
-      title: "Registrasi Berhasil!",
-      description: "Akun Anda telah dibuat. Selamat berinvestasi!",
-    });
-    navigate("/");
+      if (verifyError || !data?.success) {
+        toast({
+          title: "Verifikasi Gagal",
+          description: data?.error || "Kode OTP salah atau kadaluarsa",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // OTP verified, proceed with registration
+      const { error } = await signUp(registerPhone, registerPassword, registerName, referralCode || undefined, registerEmail || undefined);
+
+      if (error) {
+        let errorMessage = error.message;
+        if (error.message.includes("already registered")) {
+          errorMessage = "Nomor sudah terdaftar. Silakan login.";
+        }
+        toast({ title: "Registrasi Gagal", description: errorMessage, variant: "destructive" });
+        setIsLoading(false);
+        return;
+      }
+
+      toast({ title: "Registrasi Berhasil!", description: "Akun Anda telah dibuat. Selamat berinvestasi!" });
+      navigate("/");
+    } catch (err) {
+      toast({ title: "Error", description: "Terjadi kesalahan", variant: "destructive" });
+    }
+    setIsLoading(false);
   };
 
   if (loading) {
@@ -283,105 +329,80 @@ const Auth = () => {
 
                 {/* Register Tab */}
                 <TabsContent value="register">
-                  <form onSubmit={handleRegister} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="register-name">Nama Lengkap</Label>
-                      <Input
-                        id="register-name"
-                        type="text"
-                        placeholder="Masukkan nama lengkap"
-                        value={registerName}
-                        onChange={(e) => setRegisterName(e.target.value)}
-                        required
-                        className="bg-muted/50"
-                      />
+                  {otpStep === 'form' ? (
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="register-name">Nama Lengkap</Label>
+                        <Input id="register-name" type="text" placeholder="Masukkan nama lengkap" value={registerName} onChange={(e) => setRegisterName(e.target.value)} required className="bg-muted/50" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="register-phone" className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" />Nomor WhatsApp</Label>
+                        <Input id="register-phone" type="tel" placeholder="08123456789" value={registerPhone} onChange={(e) => setRegisterPhone(e.target.value)} required className="bg-muted/50" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="register-email" className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" />Email <span className="text-muted-foreground text-xs">(Opsional)</span></Label>
+                        <Input id="register-email" type="email" placeholder="nama@email.com" value={registerEmail} onChange={(e) => setRegisterEmail(e.target.value)} className="bg-muted/50" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="register-password">Password</Label>
+                        <div className="relative">
+                          <Input id="register-password" type={showPassword ? "text" : "password"} placeholder="Minimal 6 karakter" value={registerPassword} onChange={(e) => setRegisterPassword(e.target.value)} required minLength={6} className="bg-muted/50" />
+                          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="register-confirm-password">Konfirmasi Password</Label>
+                        <Input id="register-confirm-password" type="password" placeholder="Ulangi password" value={registerConfirmPassword} onChange={(e) => setRegisterConfirmPassword(e.target.value)} required className="bg-muted/50" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="referral-code">Kode Referral <span className="text-muted-foreground">(Opsional)</span></Label>
+                        <Input id="referral-code" type="text" placeholder="Masukkan kode referral" value={referralCode} onChange={(e) => setReferralCode(e.target.value.toUpperCase())} className="bg-muted/50" />
+                      </div>
+                      <Button type="button" className="w-full" size="lg" disabled={otpSending} onClick={handleSendOtp}>
+                        {otpSending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Mengirim OTP...</> : "Kirim Kode Verifikasi"}
+                      </Button>
                     </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="register-phone" className="flex items-center gap-1.5">
-                        <Phone className="w-3.5 h-3.5" />
-                        Nomor WhatsApp
-                      </Label>
-                      <Input
-                        id="register-phone"
-                        type="tel"
-                        placeholder="08123456789"
-                        value={registerPhone}
-                        onChange={(e) => setRegisterPhone(e.target.value)}
-                        required
-                        className="bg-muted/50"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="register-email" className="flex items-center gap-1.5">
-                        <Mail className="w-3.5 h-3.5" />
-                        Email <span className="text-muted-foreground text-xs">(Opsional)</span>
-                      </Label>
-                      <Input
-                        id="register-email"
-                        type="email"
-                        placeholder="nama@email.com"
-                        value={registerEmail}
-                        onChange={(e) => setRegisterEmail(e.target.value)}
-                        className="bg-muted/50"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="register-password">Password</Label>
-                      <div className="relative">
+                  ) : (
+                    <form onSubmit={handleVerifyAndRegister} className="space-y-4">
+                      <div className="text-center space-y-2 mb-4">
+                        <Phone className="w-10 h-10 text-primary mx-auto" />
+                        <p className="text-sm text-muted-foreground">
+                          Kode OTP telah dikirim ke <span className="font-semibold text-foreground">{registerPhone}</span>
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="otp-code">Kode Verifikasi (6 digit)</Label>
                         <Input
-                          id="register-password"
-                          type={showPassword ? "text" : "password"}
-                          placeholder="Minimal 6 karakter"
-                          value={registerPassword}
-                          onChange={(e) => setRegisterPassword(e.target.value)}
-                          required
-                          minLength={6}
-                          className="bg-muted/50"
+                          id="otp-code"
+                          type="text"
+                          placeholder="Masukkan 6 digit kode"
+                          value={otpCode}
+                          onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                          maxLength={6}
+                          className="bg-muted/50 text-center text-2xl tracking-widest font-mono"
+                          autoFocus
                         />
+                      </div>
+                      <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+                        {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Memverifikasi...</> : "Verifikasi & Daftar"}
+                      </Button>
+                      <div className="flex items-center justify-between text-sm">
+                        <button type="button" onClick={() => { setOtpStep('form'); setOtpCode(''); }} className="text-muted-foreground hover:text-foreground transition-colors">
+                          ← Kembali
+                        </button>
                         <button
                           type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                          onClick={handleSendOtp}
+                          disabled={otpCountdown > 0 || otpSending}
+                          className="text-primary hover:text-primary/80 transition-colors disabled:text-muted-foreground"
                         >
-                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          {otpCountdown > 0 ? `Kirim ulang (${otpCountdown}s)` : "Kirim ulang OTP"}
                         </button>
                       </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="register-confirm-password">Konfirmasi Password</Label>
-                      <Input
-                        id="register-confirm-password"
-                        type="password"
-                        placeholder="Ulangi password"
-                        value={registerConfirmPassword}
-                        onChange={(e) => setRegisterConfirmPassword(e.target.value)}
-                        required
-                        className="bg-muted/50"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="referral-code">
-                        Kode Referral <span className="text-muted-foreground">(Opsional)</span>
-                      </Label>
-                      <Input
-                        id="referral-code"
-                        type="text"
-                        placeholder="Masukkan kode referral"
-                        value={referralCode}
-                        onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                        className="bg-muted/50"
-                      />
-                    </div>
-
-                    <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-                      {isLoading ? "Memproses..." : "Daftar Sekarang"}
-                    </Button>
-                  </form>
+                    </form>
+                  )}
                 </TabsContent>
               </Tabs>
             </CardContent>

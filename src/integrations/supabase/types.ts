@@ -130,6 +130,33 @@ export type Database = {
           },
         ]
       }
+      otp_codes: {
+        Row: {
+          code: string
+          created_at: string
+          expires_at: string
+          id: string
+          is_verified: boolean | null
+          phone: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          is_verified?: boolean | null
+          phone: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          is_verified?: boolean | null
+          phone?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           created_at: string | null
@@ -282,6 +309,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_expired_otps: { Args: never; Returns: undefined }
       generate_referral_code: { Args: never; Returns: string }
       get_my_referral_code: { Args: never; Returns: string }
       has_role: {
