@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { updateProfile } from "@/lib/database";
+import { supabase } from "@/integrations/supabase/client";
 import { User, Mail, Phone, Save, Eye, EyeOff, Lock } from "lucide-react";
 
 interface ProfileDialogProps {
@@ -44,7 +45,7 @@ const ProfileDialog = ({ open, onOpenChange, mode, onSuccess }: ProfileDialogPro
     onSuccess();
   };
 
-  const handleChangePassword = () => {
+  const handleChangePassword = async () => {
     if (newPassword.length < 6) {
       toast({ title: "Error", description: "Password minimal 6 karakter", variant: "destructive" });
       return;
@@ -53,6 +54,15 @@ const ProfileDialog = ({ open, onOpenChange, mode, onSuccess }: ProfileDialogPro
       toast({ title: "Error", description: "Password tidak cocok", variant: "destructive" });
       return;
     }
+    
+    if (!user) return;
+    
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    
     toast({ title: "Password Diperbarui", description: "Password baru berhasil disimpan" });
     onOpenChange(false);
     onSuccess();
