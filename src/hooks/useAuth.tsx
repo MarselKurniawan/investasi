@@ -167,31 +167,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const isPhone = /^[0-9+]/.test(identifier) && !identifier.includes('@');
     
     if (isPhone) {
-      // First try dummy email format
-      const dummyEmail = `${identifier.replace(/[^0-9]/g, '')}@wa.investpro.id`;
-      const { error: dummyError } = await supabase.auth.signInWithPassword({
-        email: dummyEmail,
-        password,
+      // Use edge function to login by phone (bypasses RLS for profile lookup)
+      const { data, error: fnError } = await supabase.functions.invoke('login-by-phone', {
+        body: { phone: identifier, password },
       });
-      
-      if (!dummyError) return { error: null };
-      
-      // If failed, look up real email from profiles by phone number
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('phone', identifier)
-        .maybeSingle();
-      
-      if (profileData?.email) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: profileData.email,
-          password,
-        });
-        return { error };
+
+      if (fnError || !data?.success) {
+        return { error: new Error(data?.error || fnError?.message || 'Login gagal') };
       }
-      
-      return { error: dummyError };
+
+      // Set the session from the edge function response
+      if (data.session) {
+        const { error: setError } = await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        });
+        if (setError) return { error: setError };
+      }
+
+      return { error: null };
     }
     
     // Direct email login
