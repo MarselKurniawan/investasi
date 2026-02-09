@@ -68,7 +68,7 @@ const ProductDetailDialog = ({
             <div className="space-y-3">
               <div className="flex items-center justify-between py-2">
                 <span className="text-muted-foreground">Harga layanan</span>
-                <span className="text-xl font-bold text-primary drop-shadow-[0_0_10px_hsl(185,100%,50%)]">
+                <span className="text-xl font-bold text-primary">
                   {formatCurrency(product.price)}
                 </span>
               </div>
@@ -86,7 +86,7 @@ const ProductDetailDialog = ({
                   <TrendingUp className="w-4 h-4 text-success" />
                   <span className="text-muted-foreground">Pemakaian harian</span>
                 </div>
-                <span className="font-bold text-success drop-shadow-[0_0_8px_hsl(145,100%,50%)]">
+                <span className="font-bold text-success">
                   {formatCurrency(product.daily_income)}
                 </span>
               </div>

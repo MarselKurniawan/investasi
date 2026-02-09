@@ -68,7 +68,7 @@ const CouponDialog = ({ open, onOpenChange, onSuccess }: CouponDialogProps) => {
                   <Sparkles className="w-5 h-5 text-vip-gold" /><h3 className="text-xl font-bold text-foreground">Selamat!</h3><Sparkles className="w-5 h-5 text-vip-gold" />
                 </div>
                 <p className="text-sm text-muted-foreground">Anda mendapatkan hadiah</p>
-                <p className="text-3xl font-bold text-success drop-shadow-[0_0_15px_hsl(145,100%,50%)]">{formatCurrency(reward)}</p>
+                <p className="text-3xl font-bold text-success">{formatCurrency(reward)}</p>
               </div>
               <Button className="w-full mt-4" onClick={handleClose}>Klaim Hadiah</Button>
             </div>
