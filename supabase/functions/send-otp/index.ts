@@ -21,6 +21,15 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Normalize phone number: convert 08xx to 628xx for Fonnte
+    let normalizedPhone = phone.replace(/[^0-9]/g, "");
+    if (normalizedPhone.startsWith("0")) {
+      normalizedPhone = "62" + normalizedPhone.substring(1);
+    } else if (!normalizedPhone.startsWith("62")) {
+      normalizedPhone = "62" + normalizedPhone;
+    }
+    console.log("Original phone:", phone, "Normalized:", normalizedPhone);
+
     const FONNTE_API_TOKEN = Deno.env.get("FONNTE_API_TOKEN");
     if (!FONNTE_API_TOKEN) {
       console.error("FONNTE_API_TOKEN not configured");
@@ -91,7 +100,7 @@ Deno.serve(async (req) => {
     const message = `Kode verifikasi InvestPro Anda: *${otp}*\n\nKode berlaku 5 menit. Jangan berikan kode ini kepada siapapun.`;
 
     const formData = new FormData();
-    formData.append("target", phone);
+    formData.append("target", normalizedPhone);
     formData.append("message", message);
 
     const fonntResponse = await fetch("https://api.fonnte.com/send", {
