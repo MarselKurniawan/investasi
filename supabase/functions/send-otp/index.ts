@@ -38,7 +38,38 @@ Deno.serve(async (req) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
-    // Clean up old OTPs for this phone
+    // Rate limiting: check if OTP was sent in the last 60 seconds
+    const oneMinuteAgo = new Date(Date.now() - 60 * 1000).toISOString();
+    const { data: recentOtp } = await supabase
+      .from("otp_codes")
+      .select("created_at")
+      .eq("phone", phone)
+      .gte("created_at", oneMinuteAgo)
+      .limit(1);
+
+    if (recentOtp && recentOtp.length > 0) {
+      return new Response(
+        JSON.stringify({ error: "Tunggu 60 detik sebelum mengirim OTP lagi" }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Rate limiting: max 5 OTPs per hour per phone
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { data: hourlyOtps } = await supabase
+      .from("otp_codes")
+      .select("id")
+      .eq("phone", phone)
+      .gte("created_at", oneHourAgo);
+
+    if (hourlyOtps && hourlyOtps.length >= 5) {
+      return new Response(
+        JSON.stringify({ error: "Terlalu banyak permintaan OTP. Coba lagi dalam 1 jam." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Clean up expired OTPs for this phone
     await supabase.from("otp_codes").delete().eq("phone", phone).lt("expires_at", new Date().toISOString());
 
     // Store OTP
