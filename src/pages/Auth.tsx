@@ -60,8 +60,24 @@ const Auth = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    const isEmail = loginPhone.includes('@');
+    
+    if (!isEmail) {
+      try {
+        phoneSchema.parse(loginPhone);
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          toast({
+            title: "Error",
+            description: error.errors[0].message,
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+    }
+
     try {
-      phoneSchema.parse(loginPhone);
       passwordSchema.parse(loginPassword);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -291,12 +307,12 @@ const Auth = () => {
                     <div className="space-y-2">
                       <Label htmlFor="login-phone" className="flex items-center gap-1.5">
                         <Phone className="w-3.5 h-3.5" />
-                        Nomor WhatsApp
+                        Nomor WhatsApp / Email
                       </Label>
                       <Input
                         id="login-phone"
-                        type="tel"
-                        placeholder="08123456789"
+                        type="text"
+                        placeholder="08123456789 atau email@contoh.com"
                         value={loginPhone}
                         onChange={(e) => setLoginPhone(e.target.value)}
                         required
