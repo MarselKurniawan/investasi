@@ -25,34 +25,36 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Verify caller is admin
+    // Verify caller is admin via auth token
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    let isAdmin = false;
+
+    if (authHeader) {
+      const token = authHeader.replace("Bearer ", "");
+      // Skip if token is the anon key
+      try {
+        const { data: { user: caller } } = await supabase.auth.getUser(token);
+        if (caller) {
+          const { data: roleData } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", caller.id)
+            .eq("role", "admin")
+            .maybeSingle();
+          if (roleData) isAdmin = true;
+        }
+      } catch (e) {
+        console.log("Auth check failed:", e);
+      }
     }
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user: caller }, error: authError } = await supabase.auth.getUser(token);
-    
-    if (authError || !caller) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    // Also check x-admin-key header for internal/tool calls
+    const adminKey = req.headers.get("x-admin-key");
+    if (adminKey && adminKey === supabaseServiceKey) {
+      isAdmin = true;
     }
 
-    // Check admin role
-    const { data: roleData } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", caller.id)
-      .eq("role", "admin")
-      .maybeSingle();
-
-    if (!roleData) {
+    if (!isAdmin) {
       return new Response(
         JSON.stringify({ error: "Forbidden: admin only" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -72,6 +74,8 @@ Deno.serve(async (req) => {
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    console.log("Password reset successful for userId:", userId);
 
     return new Response(
       JSON.stringify({ success: true, message: "Password berhasil diubah" }),
