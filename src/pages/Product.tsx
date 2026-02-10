@@ -65,7 +65,7 @@ const ProductPage = () => {
           <p className="text-sm text-muted-foreground">Pilih paket investasi terbaik</p>
         </div>
         <div className="text-right">
-          <Badge variant="vip" className="text-sm px-3 py-1 gold-pulse">
+          <Badge variant="vip" className="text-sm px-3 py-1">
             VIP {userVipLevel}
           </Badge>
           <p className="text-xs text-muted-foreground mt-1">
@@ -85,7 +85,7 @@ const ProductPage = () => {
           {availableProducts.map((product) => (
             <Card 
               key={product.id} 
-              className="shadow-card hover:shadow-glow transition-all duration-300 overflow-hidden border-primary/20 hover:border-primary/50"
+              className="shadow-card transition-all duration-300 overflow-hidden border-primary/20 hover:border-primary/50"
             >
               <CardContent className="p-0">
                 <div className="flex">
@@ -155,7 +155,7 @@ const ProductPage = () => {
                       </Button>
                       <Button 
                         size="sm"
-                        className="flex-1 neon-pulse" 
+                        className="flex-1" 
                         onClick={() => handleInvest(product)}
                       >
                         Investasi
@@ -217,14 +217,14 @@ const ProductPage = () => {
             ))}
           </div>
 
-          <Card className="mt-4 bg-gradient-to-r from-primary/20 via-accent/20 to-vip-gold/20 border-primary/30 shadow-glow">
+          <Card className="mt-4 bg-gradient-to-r from-primary/20 via-accent/20 to-vip-gold/20 border-primary/30">
             <CardContent className="p-5 text-center">
               <Sparkles className="w-10 h-10 text-vip-gold mx-auto mb-3" />
               <h3 className="font-bold text-lg mb-2 text-foreground">Tingkatkan Level VIP Anda!</h3>
               <p className="text-sm text-muted-foreground mb-4">
                 Ajak teman untuk membuka produk eksklusif dengan penghasilan lebih tinggi
               </p>
-              <Button variant="vip" asChild className="gold-pulse">
+              <Button variant="vip" asChild>
                 <a href="/team">Lihat Program Referral</a>
               </Button>
             </CardContent>
