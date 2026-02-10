@@ -189,59 +189,59 @@ const Admin = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        <Card className="shadow-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Users className="w-4 h-4 text-primary" />
-              <p className="text-xs text-muted-foreground">Total Users</p>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3">
+        <Card className="min-w-0 overflow-hidden">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Users className="w-4 h-4 shrink-0 text-primary" />
+              <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Total Users</p>
             </div>
-            <p className="text-2xl font-bold">{stats.totalUsers}</p>
+            <p className="text-lg sm:text-2xl font-bold truncate">{stats.totalUsers}</p>
           </CardContent>
         </Card>
-        <Card className="shadow-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Wallet className="w-4 h-4 text-success" />
-              <p className="text-xs text-muted-foreground">Total Balance</p>
+        <Card className="min-w-0 overflow-hidden">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Wallet className="w-4 h-4 shrink-0 text-success" />
+              <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Total Balance</p>
             </div>
-            <p className="text-lg font-bold">{formatCurrency(stats.totalBalance)}</p>
+            <p className="text-xs sm:text-lg font-bold truncate">{formatCurrency(stats.totalBalance)}</p>
           </CardContent>
         </Card>
-        <Card className="shadow-card bg-accent/10">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <ArrowUpRight className="w-4 h-4 text-accent" />
-              <p className="text-xs text-muted-foreground">Pending</p>
+        <Card className="min-w-0 overflow-hidden bg-accent/10">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-1.5 mb-1">
+              <ArrowUpRight className="w-4 h-4 shrink-0 text-accent" />
+              <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Pending</p>
             </div>
-            <p className="text-2xl font-bold text-accent">{stats.pendingCount}</p>
+            <p className="text-lg sm:text-2xl font-bold text-accent truncate">{stats.pendingCount}</p>
           </CardContent>
         </Card>
-        <Card className="shadow-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="w-4 h-4 text-primary" />
-              <p className="text-xs text-muted-foreground">Total Income</p>
+        <Card className="min-w-0 overflow-hidden">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-1.5 mb-1">
+              <TrendingUp className="w-4 h-4 shrink-0 text-primary" />
+              <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Total Income</p>
             </div>
-            <p className="text-sm font-bold">{formatCurrency(stats.totalIncome)}</p>
+            <p className="text-[11px] sm:text-sm font-bold truncate">{formatCurrency(stats.totalIncome)}</p>
           </CardContent>
         </Card>
-        <Card className="shadow-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <ArrowUpRight className="w-4 h-4 text-success" />
-              <p className="text-xs text-muted-foreground">Total Recharge</p>
+        <Card className="min-w-0 overflow-hidden">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-1.5 mb-1">
+              <ArrowUpRight className="w-4 h-4 shrink-0 text-success" />
+              <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Total Recharge</p>
             </div>
-            <p className="text-sm font-bold">{formatCurrency(stats.totalRecharge)}</p>
+            <p className="text-[11px] sm:text-sm font-bold truncate">{formatCurrency(stats.totalRecharge)}</p>
           </CardContent>
         </Card>
-        <Card className="shadow-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <ArrowDownRight className="w-4 h-4 text-destructive" />
-              <p className="text-xs text-muted-foreground">Total Withdraw</p>
+        <Card className="min-w-0 overflow-hidden">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-1.5 mb-1">
+              <ArrowDownRight className="w-4 h-4 shrink-0 text-destructive" />
+              <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Total Withdraw</p>
             </div>
-            <p className="text-sm font-bold">{formatCurrency(stats.totalWithdraw)}</p>
+            <p className="text-[11px] sm:text-sm font-bold truncate">{formatCurrency(stats.totalWithdraw)}</p>
           </CardContent>
         </Card>
       </div>
