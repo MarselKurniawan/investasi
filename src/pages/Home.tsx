@@ -172,13 +172,13 @@ const Home = () => {
       </div>
 
       {/* Balance Card */}
-      <Card className="shadow-card border-primary/20 hover:border-primary/40 transition-colors">
-        <CardContent className="p-6">
-          <div className="flex items-center gap-2 mb-4">
+      <Card className="border-primary/20 hover:border-primary/40 transition-colors">
+        <CardContent className="p-4 sm:p-6">
+          <div className="flex items-center gap-2 mb-3">
             <Wallet className="w-5 h-5 text-primary" />
             <span className="text-sm text-muted-foreground font-medium">Saldo Tersedia</span>
           </div>
-          <p className="text-3xl font-heading font-bold text-primary mb-4">
+          <p className="text-2xl sm:text-3xl font-heading font-bold text-primary mb-4 truncate">
             {formatCurrency(balance)}
           </p>
 
@@ -206,25 +206,25 @@ const Home = () => {
       {/* Claim Today Notification Banner - Outside Balance Card */}
       {claimableInvestments.length > 0 && (
         <Card 
-          className="shadow-card bg-gradient-to-r from-success/10 via-primary/5 to-success/10 border-success/40 hover:border-success/60 transition-all cursor-pointer overflow-hidden group"
+          className="bg-gradient-to-r from-success/10 via-primary/5 to-success/10 border-success/40 hover:border-success/60 transition-all cursor-pointer overflow-hidden group"
           onClick={handleOpenClaimDialog}
         >
-          <CardContent className="p-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-success/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Gift className="w-6 h-6 text-success" />
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-success/20 rounded-xl flex items-center justify-center shrink-0">
+                <Gift className="w-5 h-5 sm:w-6 sm:h-6 text-success" />
               </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <Bell className="w-3.5 h-3.5 text-success animate-bounce" />
-                  <p className="text-base font-semibold text-foreground">Klaim Hari Ini</p>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <Bell className="w-3 h-3 text-success" />
+                  <p className="text-sm sm:text-base font-semibold text-foreground">Klaim Hari Ini</p>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   {claimableInvestments.length} investasi siap diklaim
                 </p>
               </div>
-              <div className="text-right">
-                <p className="text-lg font-bold text-success">
+              <div className="text-right shrink-0">
+                <p className="text-sm sm:text-lg font-bold text-success truncate max-w-[100px] sm:max-w-none">
                   +{formatCurrency(totalClaimable)}
                 </p>
                 <Button 
@@ -246,16 +246,16 @@ const Home = () => {
 
       {/* Active Investments Summary */}
       {activeInvestments.length > 0 && (
-        <Card className="shadow-card bg-success/10 border-success/30 transition-all">
+        <Card className="bg-success/10 border-success/30 transition-all">
           <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Investasi Aktif</p>
-                <p className="text-lg font-bold text-foreground">{activeInvestments.length} Paket</p>
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-muted-foreground">Investasi Aktif</p>
+                <p className="text-base sm:text-lg font-bold text-foreground">{activeInvestments.length} Paket</p>
               </div>
-              <div className="text-right">
-                <p className="text-sm text-muted-foreground">Income Harian</p>
-                <p className="text-lg font-bold text-success">
+              <div className="text-right min-w-0">
+                <p className="text-xs sm:text-sm text-muted-foreground">Income Harian</p>
+                <p className="text-base sm:text-lg font-bold text-success truncate">
                   {formatCurrency(totalDailyIncome)}
                 </p>
               </div>
@@ -280,9 +280,9 @@ const Home = () => {
 
         <div className="space-y-4">
           {popularProducts.map((product) => (
-            <Card 
+              <Card 
               key={product.id} 
-              className="shadow-card transition-all duration-300 cursor-pointer border-primary/20 hover:border-primary/50 overflow-hidden"
+              className="transition-all duration-300 cursor-pointer border-primary/20 hover:border-primary/50 overflow-hidden"
             >
               {/* Product Image */}
               <div className="relative h-32 overflow-hidden">
@@ -334,27 +334,27 @@ const Home = () => {
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-3 gap-3">
-        <Card className="shadow-card border-success/20 hover:border-success/40 transition-colors">
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground mb-2">Total Income</p>
-            <p className="text-lg font-bold text-success">
+      <div className="grid grid-cols-3 gap-2">
+        <Card className="border-success/20 hover:border-success/40 transition-colors overflow-hidden">
+          <CardContent className="p-3">
+            <p className="text-[10px] sm:text-xs text-muted-foreground mb-1">Total Income</p>
+            <p className="text-xs sm:text-sm font-bold text-success truncate">
               {formatCurrency(profile?.total_income || 0)}
             </p>
           </CardContent>
         </Card>
-        <Card className="shadow-card border-primary/20 hover:border-primary/40 transition-colors">
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground mb-2">Komisi</p>
-            <p className="text-lg font-bold text-primary">
+        <Card className="border-primary/20 hover:border-primary/40 transition-colors overflow-hidden">
+          <CardContent className="p-3">
+            <p className="text-[10px] sm:text-xs text-muted-foreground mb-1">Komisi</p>
+            <p className="text-xs sm:text-sm font-bold text-primary truncate">
               {formatCurrency(profile?.team_income || 0)}
             </p>
           </CardContent>
         </Card>
-        <Card className="shadow-card border-vip-gold/20 hover:border-vip-gold/40 transition-colors">
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground mb-2">Rabat</p>
-            <p className="text-lg font-bold text-vip-gold">
+        <Card className="border-vip-gold/20 hover:border-vip-gold/40 transition-colors overflow-hidden">
+          <CardContent className="p-3">
+            <p className="text-[10px] sm:text-xs text-muted-foreground mb-1">Rabat</p>
+            <p className="text-xs sm:text-sm font-bold text-vip-gold truncate">
               {formatCurrency(profile?.rabat_income || 0)}
             </p>
           </CardContent>
