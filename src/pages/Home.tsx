@@ -11,7 +11,9 @@ import { useTheme } from "@/hooks/useTheme";
 import RechargeDialog from "@/components/RechargeDialog";
 import WithdrawDialog from "@/components/WithdrawDialog";
 import InvestDialog from "@/components/InvestDialog";
+import DailyCheckinDialog from "@/components/DailyCheckinDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { CalendarCheck } from "lucide-react";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -29,6 +31,7 @@ const Home = () => {
   const [showConfetti, setShowConfetti] = useState(false);
   const [claimed, setClaimed] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
+  const [checkinOpen, setCheckinOpen] = useState(false);
 
   const loadData = async () => {
     if (user) {
@@ -203,6 +206,27 @@ const Home = () => {
         </CardContent>
       </Card>
 
+      {/* Daily Check-in Banner */}
+      <Card 
+        className="bg-gradient-to-r from-primary/10 via-accent/5 to-primary/10 border-primary/40 hover:border-primary/60 transition-all cursor-pointer overflow-hidden"
+        onClick={() => setCheckinOpen(true)}
+      >
+        <CardContent className="p-3 sm:p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary/20 rounded-xl flex items-center justify-center shrink-0">
+              <CalendarCheck className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm sm:text-base font-semibold text-foreground">Check-in Harian</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">Absen setiap hari, dapat hadiah!</p>
+            </div>
+            <Button size="sm" variant="default" className="shrink-0 text-xs" onClick={(e) => { e.stopPropagation(); setCheckinOpen(true); }}>
+              Check-in
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Claim Today Notification Banner - Outside Balance Card */}
       {claimableInvestments.length > 0 && (
         <Card 
@@ -371,6 +395,11 @@ const Home = () => {
         open={withdrawOpen}
         onOpenChange={setWithdrawOpen}
         balance={balance}
+        onSuccess={loadData}
+      />
+      <DailyCheckinDialog
+        open={checkinOpen}
+        onOpenChange={setCheckinOpen}
         onSuccess={loadData}
       />
       <InvestDialog

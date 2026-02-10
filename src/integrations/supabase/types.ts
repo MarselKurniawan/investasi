@@ -74,6 +74,33 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_checkins: {
+        Row: {
+          checked_in_at: string
+          created_at: string
+          day_number: number
+          id: string
+          reward_amount: number
+          user_id: string
+        }
+        Insert: {
+          checked_in_at?: string
+          created_at?: string
+          day_number?: number
+          id?: string
+          reward_amount?: number
+          user_id: string
+        }
+        Update: {
+          checked_in_at?: string
+          created_at?: string
+          day_number?: number
+          id?: string
+          reward_amount?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       investments: {
         Row: {
           amount: number
