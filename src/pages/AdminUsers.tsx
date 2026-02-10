@@ -15,12 +15,14 @@ import {
   getTeamMembers,
   updateProfile,
   setUserAdmin,
+  deleteUser,
   formatCurrency,
   getCommissionRate,
   Profile,
   Transaction,
   Investment,
 } from "@/lib/database";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Users,
   ArrowUpRight,
@@ -38,7 +40,10 @@ import {
   Share2,
   ChevronLeft,
   Package,
+  ShieldCheck,
+  ShieldOff,
 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Link } from "react-router-dom";
 
 const AdminUsers = () => {
@@ -51,7 +56,14 @@ const AdminUsers = () => {
   const [editUserOpen, setEditUserOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
   const [editName, setEditName] = useState("");
-  const [editPhone, setEditPhone] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+
+  // Delete user dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<Profile | null>(null);
+
+  // Admin roles cache
+  const [adminUserIds, setAdminUserIds] = useState<Set<string>>(new Set());
 
   // Add balance dialog
   const [balanceDialogOpen, setBalanceDialogOpen] = useState(false);
@@ -70,6 +82,14 @@ const AdminUsers = () => {
     const data = await getAllProfiles();
     setProfiles(data);
     setFilteredUsers(data);
+
+    // Load admin roles
+    const { data: rolesData } = await supabase
+      .from('user_roles')
+      .select('user_id')
+      .eq('role', 'admin');
+    const adminIds = new Set((rolesData || []).map(r => r.user_id));
+    setAdminUserIds(adminIds);
   };
 
   useEffect(() => {
@@ -108,15 +128,28 @@ const AdminUsers = () => {
   const openEditUser = (user: Profile) => {
     setSelectedUser(user);
     setEditName(user.name);
-    setEditPhone(user.phone || "");
+    setEditEmail(user.email || "");
     setEditUserOpen(true);
   };
 
   const handleSaveUser = async () => {
     if (!selectedUser) return;
-    await updateProfile(selectedUser.user_id, { name: editName, phone: editPhone });
+    await updateProfile(selectedUser.user_id, { name: editName, email: editEmail });
     toast({ title: "User Updated", description: "Data user berhasil diperbarui" });
     setEditUserOpen(false);
+    loadData();
+  };
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+    const success = await deleteUser(userToDelete.user_id);
+    if (success) {
+      toast({ title: "User Dihapus", description: `${userToDelete.name} berhasil dihapus` });
+    } else {
+      toast({ title: "Error", description: "Gagal menghapus user", variant: "destructive" });
+    }
+    setDeleteDialogOpen(false);
+    setUserToDelete(null);
     loadData();
   };
 
@@ -195,29 +228,29 @@ const AdminUsers = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="shadow-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2"><Users className="w-4 h-4 text-primary" /><p className="text-xs text-muted-foreground">Total Users</p></div>
-            <p className="text-2xl font-bold">{stats.totalUsers}</p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
+        <Card className="min-w-0 overflow-hidden">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-1.5 mb-1"><Users className="w-4 h-4 shrink-0 text-primary" /><p className="text-[10px] sm:text-xs text-muted-foreground">Total Users</p></div>
+            <p className="text-lg sm:text-2xl font-bold">{stats.totalUsers}</p>
           </CardContent>
         </Card>
-        <Card className="shadow-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2"><Wallet className="w-4 h-4 text-success" /><p className="text-xs text-muted-foreground">Total Balance</p></div>
-            <p className="text-lg font-bold">{formatCurrency(stats.totalBalance)}</p>
+        <Card className="min-w-0 overflow-hidden">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-1.5 mb-1"><Wallet className="w-4 h-4 shrink-0 text-success" /><p className="text-[10px] sm:text-xs text-muted-foreground">Total Balance</p></div>
+            <p className="text-[10px] sm:text-lg font-bold break-all">{formatCurrency(stats.totalBalance)}</p>
           </CardContent>
         </Card>
-        <Card className="shadow-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2"><TrendingUp className="w-4 h-4 text-primary" /><p className="text-xs text-muted-foreground">Total Income</p></div>
-            <p className="text-lg font-bold">{formatCurrency(stats.totalIncome)}</p>
+        <Card className="min-w-0 overflow-hidden">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-1.5 mb-1"><TrendingUp className="w-4 h-4 shrink-0 text-primary" /><p className="text-[10px] sm:text-xs text-muted-foreground">Total Income</p></div>
+            <p className="text-[10px] sm:text-lg font-bold break-all">{formatCurrency(stats.totalIncome)}</p>
           </CardContent>
         </Card>
-        <Card className="shadow-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2"><Share2 className="w-4 h-4 text-accent" /><p className="text-xs text-muted-foreground">Total Referrals</p></div>
-            <p className="text-2xl font-bold">{stats.totalReferrals}</p>
+        <Card className="min-w-0 overflow-hidden">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-1.5 mb-1"><Share2 className="w-4 h-4 shrink-0 text-accent" /><p className="text-[10px] sm:text-xs text-muted-foreground">Total Referrals</p></div>
+            <p className="text-lg sm:text-2xl font-bold">{stats.totalReferrals}</p>
           </CardContent>
         </Card>
       </div>
@@ -239,35 +272,36 @@ const AdminUsers = () => {
           </Card>
         ) : (
           filteredUsers.map((user) => (
-            <Card key={user.id} className="shadow-card">
-              <CardContent className="p-4">
+            <Card key={user.id} className="min-w-0 overflow-hidden">
+              <CardContent className="p-3 sm:p-4">
                 <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-semibold text-foreground">{user.name}</p>
                       <Badge variant="outline" className="text-xs"><Crown className="w-3 h-3 mr-1" />VIP {user.vip_level}</Badge>
+                      {adminUserIds.has(user.user_id) && <Badge className="text-xs bg-primary">Admin</Badge>}
                     </div>
                     <p className="text-xs text-muted-foreground">{user.email}</p>
                     <p className="text-xs text-muted-foreground mt-1">Ref: <span className="text-primary font-medium">{user.referral_code}</span></p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-lg font-bold text-foreground">{formatCurrency(user.balance)}</p>
+                  <div className="text-right shrink-0 ml-2">
+                    <p className="text-sm sm:text-lg font-bold text-foreground break-all">{formatCurrency(user.balance)}</p>
                     <p className="text-xs text-muted-foreground">Saldo</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-3 gap-1 sm:gap-2 text-center bg-muted rounded-lg p-2 sm:p-3 mb-3">
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-[10px] sm:text-xs text-muted-foreground">Recharge</p>
-                    <p className="text-xs sm:text-sm font-semibold truncate">{formatCurrency(user.total_recharge)}</p>
+                    <p className="text-[10px] sm:text-sm font-semibold break-all">{formatCurrency(user.total_recharge)}</p>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-[10px] sm:text-xs text-muted-foreground">Pendapatan</p>
-                    <p className="text-xs sm:text-sm font-semibold text-success truncate">{formatCurrency(user.total_income)}</p>
+                    <p className="text-[10px] sm:text-sm font-semibold text-success break-all">{formatCurrency(user.total_income)}</p>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-[10px] sm:text-xs text-muted-foreground">Withdraw</p>
-                    <p className="text-xs sm:text-sm font-semibold text-accent truncate">{formatCurrency(user.total_withdraw)}</p>
+                    <p className="text-[10px] sm:text-sm font-semibold text-accent break-all">{formatCurrency(user.total_withdraw)}</p>
                   </div>
                 </div>
 
@@ -285,6 +319,22 @@ const AdminUsers = () => {
                   </Button>
                   <Button variant="outline" size="sm" className="px-2" onClick={() => openBalanceDialog(user, "subtract")}>
                     <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className={`px-2 ${adminUserIds.has(user.user_id) ? 'text-primary border-primary' : ''}`}
+                    onClick={() => handleToggleAdmin(user.user_id, adminUserIds.has(user.user_id))}
+                  >
+                    {adminUserIds.has(user.user_id) ? <ShieldOff className="w-3 h-3 sm:w-4 sm:h-4" /> : <ShieldCheck className="w-3 h-3 sm:w-4 sm:h-4" />}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="px-2 text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+                    onClick={() => { setUserToDelete(user); setDeleteDialogOpen(true); }}
+                  >
+                    <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                   </Button>
                   <select 
                     className="px-2 sm:px-3 py-1.5 text-xs sm:text-sm rounded-md bg-muted border border-border" 
@@ -313,8 +363,8 @@ const AdminUsers = () => {
               <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label>Telepon</Label>
-              <Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} />
+              <Label>Email</Label>
+              <Input value={editEmail} onChange={(e) => setEditEmail(e.target.value)} />
             </div>
           </div>
           <DialogFooter className="flex-col sm:flex-row gap-2">
@@ -346,65 +396,21 @@ const AdminUsers = () => {
         </DialogContent>
       </Dialog>
 
-      {/* User Detail Dialog */}
-      <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
-        <DialogContent className="w-[95vw] max-w-lg mx-auto max-h-[85vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="text-base sm:text-lg truncate">Detail: {selectedUser?.name}</DialogTitle>
-          </DialogHeader>
-          <Tabs value={detailTab} onValueChange={setDetailTab} className="flex-1 overflow-hidden">
-            <TabsList className="grid grid-cols-4 w-full">
-              <TabsTrigger value="overview" className="text-[10px] sm:text-sm px-1">Overview</TabsTrigger>
-              <TabsTrigger value="referrals" className="text-[10px] sm:text-sm px-1">Referral</TabsTrigger>
-              <TabsTrigger value="transactions" className="text-[10px] sm:text-sm px-1">Transaksi</TabsTrigger>
-              <TabsTrigger value="investments" className="text-[10px] sm:text-sm px-1">Investasi</TabsTrigger>
-            </TabsList>
-            <div className="overflow-y-auto max-h-[45vh] sm:max-h-[50vh] mt-4">
-              <TabsContent value="overview" className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-muted p-3 rounded-lg"><p className="text-xs text-muted-foreground">Balance</p><p className="font-bold">{formatCurrency(selectedUser?.balance || 0)}</p></div>
-                  <div className="bg-muted p-3 rounded-lg"><p className="text-xs text-muted-foreground">VIP Level</p><p className="font-bold">VIP {selectedUser?.vip_level}</p></div>
-                  <div className="bg-muted p-3 rounded-lg"><p className="text-xs text-muted-foreground">Total Income</p><p className="font-bold text-success">{formatCurrency(selectedUser?.total_income || 0)}</p></div>
-                  <div className="bg-muted p-3 rounded-lg"><p className="text-xs text-muted-foreground">Team Income</p><p className="font-bold text-primary">{formatCurrency(selectedUser?.team_income || 0)}</p></div>
-                </div>
-                <div className="bg-muted p-3 rounded-lg"><p className="text-xs text-muted-foreground">Referral Code</p><p className="font-bold text-primary">{selectedUser?.referral_code}</p></div>
-                <div className="bg-muted p-3 rounded-lg"><p className="text-xs text-muted-foreground">Referred By</p><p className="font-bold">{getReferrerName(selectedUser?.referred_by || null)}</p></div>
-              </TabsContent>
-              <TabsContent value="referrals" className="space-y-3">
-                {userReferrals.length === 0 ? <p className="text-center text-muted-foreground py-4">Tidak ada referral</p> : userReferrals.map((ref) => (
-                  <div key={ref.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                    <div><p className="font-medium">{ref.name}</p><p className="text-xs text-muted-foreground">VIP {ref.vip_level}</p></div>
-                    <p className="text-sm font-semibold">{formatCurrency(ref.total_income)}</p>
-                  </div>
-                ))}
-              </TabsContent>
-              <TabsContent value="transactions" className="space-y-2">
-                {userTransactions.length === 0 ? <p className="text-center text-muted-foreground py-4">Tidak ada transaksi</p> : userTransactions.slice(0, 20).map((tx) => (
-                  <div key={tx.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                    <div className="flex items-center gap-2">
-                      {tx.type === 'recharge' || tx.type === 'income' ? <ArrowUpRight className="w-4 h-4 text-success" /> : <ArrowDownRight className="w-4 h-4 text-accent" />}
-                      <div><p className="text-sm font-medium capitalize">{tx.type}</p><p className="text-xs text-muted-foreground">{new Date(tx.created_at).toLocaleDateString('id-ID')}</p></div>
-                    </div>
-                    <div className="text-right"><p className={`font-semibold ${tx.type === 'withdraw' || tx.type === 'invest' ? '' : 'text-success'}`}>{tx.type === 'withdraw' || tx.type === 'invest' ? '-' : '+'}{formatCurrency(tx.amount)}</p><Badge variant="outline" className="text-xs">{tx.status}</Badge></div>
-                  </div>
-                ))}
-              </TabsContent>
-              <TabsContent value="investments" className="space-y-2">
-                {userInvestments.length === 0 ? <p className="text-center text-muted-foreground py-4">Tidak ada investasi</p> : userInvestments.map((inv) => (
-                  <div key={inv.id} className="p-3 bg-muted rounded-lg">
-                    <div className="flex items-center justify-between mb-2"><p className="font-medium">{inv.product_name}</p><Badge variant={inv.status === 'active' ? 'success' : 'outline'}>{inv.status}</Badge></div>
-                    <div className="grid grid-cols-3 gap-2 text-xs">
-                      <div><p className="text-muted-foreground">Investasi</p><p className="font-semibold">{formatCurrency(inv.amount)}</p></div>
-                      <div><p className="text-muted-foreground">Harian</p><p className="font-semibold text-success">{formatCurrency(inv.daily_income)}</p></div>
-                      <div><p className="text-muted-foreground">Sisa</p><p className="font-semibold">{inv.days_remaining} hari</p></div>
-                    </div>
-                  </div>
-                ))}
-              </TabsContent>
-            </div>
-          </Tabs>
-        </DialogContent>
-      </Dialog>
+      {/* Delete Confirmation */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent className="w-[95vw] max-w-md mx-auto">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus User?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Anda yakin ingin menghapus <strong>{userToDelete?.name}</strong>? Semua data user termasuk investasi, transaksi, dan profil akan dihapus permanen.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteUser} className="bg-destructive hover:bg-destructive/90">Hapus</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
