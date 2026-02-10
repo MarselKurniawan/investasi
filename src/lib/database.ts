@@ -518,6 +518,17 @@ export const setUserAdmin = async (userId: string, isAdmin: boolean): Promise<bo
   return true;
 };
 
+export const deleteUser = async (userId: string): Promise<boolean> => {
+  const { data, error } = await supabase.functions.invoke('delete-user', {
+    body: { user_id: userId },
+  });
+  if (error) {
+    console.error('Error deleting user:', error);
+    return false;
+  }
+  return data?.success || false;
+};
+
 export const getTeamMembers = async (referralCode: string): Promise<Profile[]> => {
   const { data, error } = await supabase
     .from('profiles')
