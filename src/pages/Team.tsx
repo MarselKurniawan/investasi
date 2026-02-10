@@ -105,7 +105,7 @@ const Team = () => {
       </div>
 
       {/* VIP Progress Card */}
-      <Card className="shadow-elegant border-2 border-primary/20">
+      <Card className="border-2 border-primary/20">
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -272,7 +272,7 @@ const Team = () => {
       </Card>
 
       {/* CTA Card */}
-      <Card className="bg-gradient-primary text-primary-foreground border-0 shadow-glow">
+      <Card className="bg-gradient-primary text-primary-foreground border-0">
         <CardContent className="p-6 text-center">
           <Crown className="w-12 h-12 mx-auto mb-3 opacity-90" />
           <h3 className="font-bold text-lg mb-2">Raih Komisi 3 Level!</h3>

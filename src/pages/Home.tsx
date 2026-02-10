@@ -152,7 +152,7 @@ const Home = () => {
           <p className="text-sm text-muted-foreground">Kelola investasi Anda dengan mudah</p>
         </div>
         <div className="flex items-center gap-1">
-          <Badge variant="vip" className="text-sm px-3 py-1 gold-pulse">
+          <Badge variant="vip" className="text-sm px-3 py-1">
             VIP {vipLevel}
           </Badge>
           <Button variant="ghost" size="icon" onClick={toggleTheme} className="hover:bg-muted">
@@ -185,7 +185,7 @@ const Home = () => {
           <div className="grid grid-cols-2 gap-3">
             <Button
               variant="success"
-              className="flex items-center gap-2 shadow-success-glow"
+              className="flex items-center gap-2"
               onClick={() => setRechargeOpen(true)}
             >
               <ArrowUpRight className="w-4 h-4" />
@@ -230,7 +230,7 @@ const Home = () => {
                 <Button 
                   size="sm" 
                   variant="success"
-                  className="mt-1 text-xs shadow-success-glow"
+                  className="mt-1 text-xs"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleOpenClaimDialog();
@@ -246,7 +246,7 @@ const Home = () => {
 
       {/* Active Investments Summary */}
       {activeInvestments.length > 0 && (
-        <Card className="shadow-card bg-success/10 border-success/30 hover:shadow-success-glow transition-all">
+        <Card className="shadow-card bg-success/10 border-success/30 transition-all">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -255,7 +255,7 @@ const Home = () => {
               </div>
               <div className="text-right">
                 <p className="text-sm text-muted-foreground">Income Harian</p>
-                <p className="text-lg font-bold text-success drop-shadow-[0_0_8px_hsl(145,100%,50%)]">
+                <p className="text-lg font-bold text-success">
                   {formatCurrency(totalDailyIncome)}
                 </p>
               </div>
@@ -282,7 +282,7 @@ const Home = () => {
           {popularProducts.map((product) => (
             <Card 
               key={product.id} 
-              className="shadow-card hover:shadow-glow transition-all duration-300 cursor-pointer border-primary/20 hover:border-primary/50 overflow-hidden"
+              className="shadow-card transition-all duration-300 cursor-pointer border-primary/20 hover:border-primary/50 overflow-hidden"
             >
               {/* Product Image */}
               <div className="relative h-32 overflow-hidden">
@@ -324,7 +324,7 @@ const Home = () => {
                   </div>
                 </div>
 
-                <Button className="w-full mt-3 neon-pulse" size="sm" onClick={() => handleInvest(product)}>
+                <Button className="w-full mt-3" size="sm" onClick={() => handleInvest(product)}>
                   Investasi Sekarang
                 </Button>
               </CardContent>
@@ -338,7 +338,7 @@ const Home = () => {
         <Card className="shadow-card border-success/20 hover:border-success/40 transition-colors">
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground mb-2">Total Income</p>
-            <p className="text-lg font-bold text-success drop-shadow-[0_0_8px_hsl(145,100%,50%)]">
+            <p className="text-lg font-bold text-success">
               {formatCurrency(profile?.total_income || 0)}
             </p>
           </CardContent>
@@ -346,7 +346,7 @@ const Home = () => {
         <Card className="shadow-card border-primary/20 hover:border-primary/40 transition-colors">
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground mb-2">Komisi</p>
-            <p className="text-lg font-bold text-primary drop-shadow-[0_0_8px_hsl(185,100%,50%)]">
+            <p className="text-lg font-bold text-primary">
               {formatCurrency(profile?.team_income || 0)}
             </p>
           </CardContent>
@@ -354,7 +354,7 @@ const Home = () => {
         <Card className="shadow-card border-vip-gold/20 hover:border-vip-gold/40 transition-colors">
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground mb-2">Rabat</p>
-            <p className="text-lg font-bold text-vip-gold drop-shadow-[0_0_8px_hsl(45,100%,55%)]">
+            <p className="text-lg font-bold text-vip-gold">
               {formatCurrency(profile?.rabat_income || 0)}
             </p>
           </CardContent>
@@ -415,7 +415,7 @@ const Home = () => {
 
             <div className={`flex flex-col items-center gap-4 transition-all duration-500 ${claimed ? 'scale-110' : ''}`}>
               <div className={`relative ${claimed ? 'animate-bounce' : 'animate-pulse'}`}>
-                <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-success via-primary to-success flex items-center justify-center shadow-lg shadow-success/30">
+                <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-success via-primary to-success flex items-center justify-center">
                   {claimed ? (
                     <PartyPopper className="w-12 h-12 text-primary-foreground" />
                   ) : (

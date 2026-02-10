@@ -153,18 +153,18 @@ const Profile = () => {
       </div>
 
       {/* Profile Card */}
-      <Card className="shadow-glow border-2 border-primary/30 overflow-hidden">
+      <Card className="border-2 border-primary/30 overflow-hidden">
         <div className="h-20 bg-gradient-to-r from-primary/30 via-accent/20 to-vip-gold/30" />
         <CardContent className="p-6 -mt-10 relative">
           <div className="flex items-end gap-4 mb-6">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center border-4 border-card shadow-glow">
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center border-4 border-card">
               <UserIcon className="w-10 h-10 text-foreground" />
             </div>
             <div className="flex-1 pb-2">
               <h2 className="text-xl font-bold text-foreground">{profile.name}</h2>
               <p className="text-sm text-muted-foreground">{profile.email}</p>
               <div className="flex items-center gap-2 mt-1">
-                <Badge variant="vip" className="gold-pulse">VIP {profile.vip_level}</Badge>
+                <Badge variant="vip">VIP {profile.vip_level}</Badge>
                 {isAdmin && (
                   <Badge variant="outline" className="border-primary/50 text-primary">
                     <Shield className="w-3 h-3 mr-1" />
@@ -248,7 +248,7 @@ const Profile = () => {
         <CardContent className="space-y-3">
           <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border border-border/50">
             <span className="text-sm">Level Anda</span>
-            <Badge variant="vip" className="gold-pulse">VIP {profile.vip_level}</Badge>
+            <Badge variant="vip">VIP {profile.vip_level}</Badge>
           </div>
           <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border border-border/50">
             <span className="text-sm">Komisi Referral</span>

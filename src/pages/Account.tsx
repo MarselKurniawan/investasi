@@ -275,7 +275,7 @@ const Account = () => {
                     {canClaim ? (
                       <Button
                         onClick={() => handleOpenClaimDialog(inv)}
-                        className="w-full bg-gradient-to-r from-success to-primary hover:from-success/90 hover:to-primary/90 text-primary-foreground font-semibold shadow-lg shadow-success/30 neon-pulse"
+                        className="w-full bg-gradient-to-r from-success to-primary hover:from-success/90 hover:to-primary/90 text-primary-foreground font-semibold h-12"
                       >
                         <Gift className="w-4 h-4 mr-2" />
                         Claim {formatCurrency(inv.daily_income)}
