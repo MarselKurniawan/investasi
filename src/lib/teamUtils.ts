@@ -26,6 +26,23 @@ export const RABAT_RATES = {
   C: 2, // 2%
 };
 
+// VIP level thresholds based on total team members (A+B+C)
+export const VIP_THRESHOLDS = [
+  { level: 5, members: 300 },
+  { level: 4, members: 200 },
+  { level: 3, members: 100 },
+  { level: 2, members: 50 },
+  { level: 1, members: 10 },
+];
+
+// Calculate VIP level from total team count
+export const calculateVipLevel = (totalMembers: number): number => {
+  for (const tier of VIP_THRESHOLDS) {
+    if (totalMembers >= tier.members) return tier.level;
+  }
+  return 1;
+};
+
 // Get all referral codes from a list of profiles
 const getReferralCodes = (profiles: Profile[]): string[] => {
   return profiles

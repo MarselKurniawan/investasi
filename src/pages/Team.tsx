@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, TrendingUp, Share2, Crown, Award } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { formatCurrency, Profile } from "@/lib/database";
-import { getMultiLevelTeam, MultiLevelTeam, COMMISSION_RATES, RABAT_RATES } from "@/lib/teamUtils";
+import { getMultiLevelTeam, MultiLevelTeam, COMMISSION_RATES, RABAT_RATES, VIP_THRESHOLDS, calculateVipLevel } from "@/lib/teamUtils";
 import ReferralDialog from "@/components/ReferralDialog";
 
 const Team = () => {
@@ -37,10 +37,14 @@ const Team = () => {
   const totalReferrals = team.total;
 
   // VIP requirements based on total team members (all levels)
-  const vipRequirements = [0, 0, 5, 15, 30, 50];
-  const nextVipLevel = Math.min(currentVipLevel + 1, 5);
-  const requiredReferrals = vipRequirements[nextVipLevel];
-  const progressPercentage = requiredReferrals > 0 ? Math.min((totalReferrals / requiredReferrals) * 100, 100) : 100;
+  const nextVipThreshold = VIP_THRESHOLDS.slice().reverse().find(t => t.members > totalReferrals);
+  const currentThreshold = VIP_THRESHOLDS.slice().reverse().find(t => t.members <= totalReferrals);
+  const nextVipLevel = nextVipThreshold ? nextVipThreshold.level : 5;
+  const requiredReferrals = nextVipThreshold ? nextVipThreshold.members : VIP_THRESHOLDS[0].members;
+  const prevRequired = currentThreshold ? currentThreshold.members : 0;
+  const progressPercentage = requiredReferrals > prevRequired 
+    ? Math.min(((totalReferrals - prevRequired) / (requiredReferrals - prevRequired)) * 100, 100) 
+    : 100;
 
   const teamLevels = [
     {
@@ -156,7 +160,7 @@ const Team = () => {
       {/* Team Stats by Level */}
       <div className="grid grid-cols-3 gap-3">
         {teamLevels.map((level) => (
-          <Card key={level.level} className="shadow-card">
+          <Card key={level.level}>
             <CardContent className="p-3 text-center">
               <p className={`text-xs font-semibold mb-1 ${level.color}`}>{level.name}</p>
               <p className="text-lg font-bold text-foreground">{level.members.length}</p>
@@ -168,13 +172,13 @@ const Team = () => {
 
       {/* Income Stats */}
       <div className="grid grid-cols-2 gap-3">
-        <Card className="shadow-card">
+        <Card>
           <CardContent className="p-3 text-center">
             <p className="text-xs text-muted-foreground mb-1">Total Komisi</p>
             <p className="text-sm font-bold text-primary">{formatCurrency(profile?.team_income || 0)}</p>
           </CardContent>
         </Card>
-        <Card className="shadow-card">
+        <Card>
           <CardContent className="p-3 text-center">
             <p className="text-xs text-muted-foreground mb-1">Total Rabat</p>
             <p className="text-sm font-bold text-vip-gold">{formatCurrency(profile?.rabat_income || 0)}</p>
@@ -183,7 +187,7 @@ const Team = () => {
       </div>
 
       {/* Commission/Rabat Rates Info */}
-      <Card className="shadow-card">
+      <Card>
         <CardHeader className="pb-2">
           <div className="flex items-center gap-2">
             <Award className="w-5 h-5 text-primary" />
@@ -219,7 +223,7 @@ const Team = () => {
       </Card>
 
       {/* Team Members */}
-      <Card className="shadow-card">
+      <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
             <Users className="w-5 h-5 text-primary" />
