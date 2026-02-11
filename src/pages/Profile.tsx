@@ -189,9 +189,9 @@ const Profile = () => {
               </p>
             </div>
             <div className="bg-muted/50 rounded-lg p-3 border border-border/50">
-              <p className="text-xs text-muted-foreground">Komisi Rate</p>
-              <p className="text-lg font-bold text-accent">
-                {(commissionRate * 100).toFixed(0)}%
+              <p className="text-xs text-muted-foreground">Kode Referral</p>
+              <p className="text-lg font-bold text-vip-gold">
+                {profile.referral_code}
               </p>
             </div>
             <div className="bg-muted/50 rounded-lg p-3 border border-border/50">
