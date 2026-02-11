@@ -34,7 +34,7 @@ const AdminProducts = () => {
     price: "",
     daily_income: "",
     validity: "",
-    vip_level: "1",
+    vip_level: "0",
     image: "",
     description: "",
   });
@@ -56,7 +56,7 @@ const AdminProducts = () => {
   const calculateTotalIncome = (dailyIncome: number, validity: number) => dailyIncome * validity;
 
   const resetForm = () => {
-    setFormData({ name: "", price: "", daily_income: "", validity: "", vip_level: "1", image: "", description: "" });
+    setFormData({ name: "", price: "", daily_income: "", validity: "", vip_level: "0", image: "", description: "" });
   };
 
   const openCreateDialog = () => {
@@ -204,7 +204,7 @@ const AdminProducts = () => {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card className="shadow-card"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><Package className="w-4 h-4 text-primary" /><p className="text-xs text-muted-foreground">Total Produk</p></div><p className="text-2xl font-bold">{products.length}</p></CardContent></Card>
-        <Card className="shadow-card"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><TrendingUp className="w-4 h-4 text-success" /><p className="text-xs text-muted-foreground">VIP 1</p></div><p className="text-2xl font-bold">{products.filter((p) => p.vip_level === 1).length}</p></CardContent></Card>
+        <Card className="shadow-card"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><TrendingUp className="w-4 h-4 text-success" /><p className="text-xs text-muted-foreground">VIP 0-1</p></div><p className="text-2xl font-bold">{products.filter((p) => p.vip_level <= 1).length}</p></CardContent></Card>
         <Card className="shadow-card"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><DollarSign className="w-4 h-4 text-accent" /><p className="text-xs text-muted-foreground">VIP 2-3</p></div><p className="text-2xl font-bold">{products.filter((p) => p.vip_level >= 2 && p.vip_level <= 3).length}</p></CardContent></Card>
         <Card className="shadow-card"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><TrendingUp className="w-4 h-4 text-vip-gold" /><p className="text-xs text-muted-foreground">VIP 4-5</p></div><p className="text-2xl font-bold">{products.filter((p) => p.vip_level >= 4).length}</p></CardContent></Card>
       </div>
@@ -253,7 +253,7 @@ const AdminProducts = () => {
             <div className="bg-muted/50 rounded-lg p-3 border border-border/50">
               <div className="flex items-center justify-between"><div className="flex items-center gap-2"><TrendingUp className="w-4 h-4 text-success" /><span className="text-sm text-muted-foreground">Total Penghasilan (otomatis)</span></div><span className="font-bold text-success">{formatCurrency(calculatedTotalIncome)}</span></div>
             </div>
-            <div className="space-y-2"><Label>Level VIP</Label><Select value={formData.vip_level} onValueChange={(value) => setFormData({ ...formData, vip_level: value })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{[1, 2, 3, 4, 5].map((level) => <SelectItem key={level} value={level.toString()}>VIP {level}</SelectItem>)}</SelectContent></Select></div>
+            <div className="space-y-2"><Label>Level VIP</Label><Select value={formData.vip_level} onValueChange={(value) => setFormData({ ...formData, vip_level: value })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{[0, 1, 2, 3, 4, 5].map((level) => <SelectItem key={level} value={level.toString()}>VIP {level}</SelectItem>)}</SelectContent></Select></div>
             
             {/* Image Upload Section */}
             <div className="space-y-3">

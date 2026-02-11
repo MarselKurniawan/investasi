@@ -341,7 +341,7 @@ const AdminUsers = () => {
                     value={user.vip_level} 
                     onChange={(e) => handleUpdateVip(user.user_id, parseInt(e.target.value))}
                   >
-                    {[1, 2, 3, 4, 5].map((level) => <option key={level} value={level}>VIP {level}</option>)}
+                    {[0, 1, 2, 3, 4, 5].map((level) => <option key={level} value={level}>VIP {level}</option>)}
                   </select>
                 </div>
               </CardContent>
