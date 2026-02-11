@@ -33,7 +33,7 @@ const Team = () => {
     loadData();
   }, [profile?.referral_code]);
 
-  const currentVipLevel = profile?.vip_level || 1;
+  const currentVipLevel = profile?.vip_level ?? 0;
   const totalReferrals = team.total;
 
   // VIP requirements based on total team members (all levels)

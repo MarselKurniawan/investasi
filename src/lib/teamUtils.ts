@@ -40,7 +40,7 @@ export const calculateVipLevel = (totalMembers: number): number => {
   for (const tier of VIP_THRESHOLDS) {
     if (totalMembers >= tier.members) return tier.level;
   }
-  return 1;
+  return 0;
 };
 
 // Get all referral codes from a list of profiles
