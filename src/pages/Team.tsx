@@ -66,7 +66,7 @@ const Team = () => {
       rabat: RABAT_RATES.B,
       members: team.levelB,
       color: "text-gray-400",
-      bgColor: "bg-gray-800/30",
+      bgColor: "bg-blue-500/10",
       badgeColor: "bg-gray-500 text-white",
     },
     {
