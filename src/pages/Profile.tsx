@@ -237,29 +237,6 @@ const Profile = () => {
       </Card>
 
 
-      {/* VIP Info */}
-      <Card className="shadow-card border-vip-gold/30">
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Crown className="w-5 h-5 text-vip-gold" />
-            Info VIP Level
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border border-border/50">
-            <span className="text-sm">Level Anda</span>
-            <Badge variant="vip">VIP {profile.vip_level}</Badge>
-          </div>
-          <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border border-border/50">
-            <span className="text-sm">Komisi Referral</span>
-            <span className="font-bold text-accent">{(commissionRate * 100).toFixed(0)}%</span>
-          </div>
-          <div className="text-xs text-muted-foreground p-3 bg-success/10 rounded-lg border border-success/20">
-            💡 Ajak lebih banyak teman untuk naik level VIP dan dapatkan komisi lebih tinggi!
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Logout */}
       <Card className="shadow-card border-destructive/20">
         <CardContent className="p-0">
