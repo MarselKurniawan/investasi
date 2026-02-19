@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/database";
-import { CalendarCheck, Gift, Sparkles, PartyPopper, Coins } from "lucide-react";
+import { CalendarCheck, Gift, Sparkles, PartyPopper, Coins, Lock } from "lucide-react";
 
 interface CheckinRecord {
   day_number: number;
@@ -19,17 +19,36 @@ interface DailyCheckinDialogProps {
   onSuccess?: () => void;
 }
 
+// Hari dalam seminggu: 1=Senin, 2=Selasa, ..., 7=Minggu
 const DAY_LABELS = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
+
+// Dapatkan nomor hari saat ini (1=Senin, ..., 7=Minggu)
+const getTodayDayNumber = (): number => {
+  const jsDay = new Date().getDay(); // 0=Minggu, 1=Sen, ..., 6=Sab
+  return jsDay === 0 ? 7 : jsDay; // konversi: Minggu jadi 7
+};
+
+// Dapatkan tanggal awal minggu ini (Senin)
+const getStartOfWeek = (): Date => {
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0=Minggu
+  const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // mundur ke Senin
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + diff);
+  monday.setHours(0, 0, 0, 0);
+  return monday;
+};
 
 const DailyCheckinDialog = ({ open, onOpenChange, onSuccess }: DailyCheckinDialogProps) => {
   const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
   const [checkins, setCheckins] = useState<CheckinRecord[]>([]);
-  const [currentDay, setCurrentDay] = useState(1);
   const [canCheckin, setCanCheckin] = useState(false);
   const [showReward, setShowReward] = useState(false);
   const [rewardAmount, setRewardAmount] = useState(0);
   const [isChecking, setIsChecking] = useState(false);
+
+  const todayDayNumber = getTodayDayNumber();
 
   useEffect(() => {
     if (open && user) loadCheckins();
@@ -38,31 +57,25 @@ const DailyCheckinDialog = ({ open, onOpenChange, onSuccess }: DailyCheckinDialo
   const loadCheckins = async () => {
     if (!user) return;
 
-    // Get checkins from the last 7 days
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    // Ambil checkin mulai dari Senin minggu ini
+    const startOfWeek = getStartOfWeek();
 
     const { data } = await supabase
       .from("daily_checkins")
       .select("day_number, reward_amount, checked_in_at")
       .eq("user_id", user.id)
-      .gte("checked_in_at", sevenDaysAgo.toISOString())
+      .gte("checked_in_at", startOfWeek.toISOString())
       .order("checked_in_at", { ascending: true });
 
     const records = (data || []) as CheckinRecord[];
     setCheckins(records);
 
-    // Check if already checked in today
+    // Cek apakah sudah check-in hari ini
     const today = new Date().toDateString();
     const checkedToday = records.some(
       (r) => new Date(r.checked_in_at).toDateString() === today
     );
     setCanCheckin(!checkedToday);
-
-    // Current day is count of checkins in this week cycle + 1
-    const nextDay = checkedToday ? records.length : records.length + 1;
-    setCurrentDay(Math.min(nextDay, 7));
-
     setShowReward(false);
   };
 
@@ -77,11 +90,11 @@ const DailyCheckinDialog = ({ open, onOpenChange, onSuccess }: DailyCheckinDialo
 
       await supabase.from("daily_checkins").insert({
         user_id: user.id,
-        day_number: currentDay,
+        day_number: todayDayNumber,
         reward_amount: reward,
       });
 
-      // Add reward to balance
+      // Tambah reward ke saldo
       await supabase
         .from("profiles")
         .update({ balance: profile.balance + reward })
@@ -108,8 +121,11 @@ const DailyCheckinDialog = ({ open, onOpenChange, onSuccess }: DailyCheckinDialo
     }
   };
 
-  // Determine which days are checked
-  const checkedDays = new Set(checkins.map((c) => c.day_number));
+  // Map checkin records berdasarkan day_number di minggu ini
+  const checkedDaysMap = new Map<number, CheckinRecord>();
+  checkins.forEach((c) => {
+    checkedDaysMap.set(c.day_number, c);
+  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -168,12 +184,20 @@ const DailyCheckinDialog = ({ open, onOpenChange, onSuccess }: DailyCheckinDialo
           </div>
         ) : (
           <>
-            {/* 7-day grid */}
-            <div className="grid grid-cols-7 gap-2 py-4">
+            {/* Minggu ini label */}
+            <p className="text-center text-xs text-muted-foreground -mb-2">
+              Minggu ini — Hari terlewat tidak bisa diklaim
+            </p>
+
+            {/* 7-day grid berbasis hari kalender */}
+            <div className="grid grid-cols-7 gap-1.5 py-4">
               {DAY_LABELS.map((label, i) => {
-                const dayNum = i + 1;
-                const isChecked = checkedDays.has(dayNum);
-                const isCurrent = dayNum === currentDay && canCheckin;
+                const dayNum = i + 1; // 1=Sen, ..., 7=Min
+                const record = checkedDaysMap.get(dayNum);
+                const isChecked = !!record;
+                const isToday = dayNum === todayDayNumber;
+                const isFuture = dayNum > todayDayNumber;
+                const isMissed = !isChecked && !isToday && !isFuture; // hari lalu yg terlewat
 
                 return (
                   <div key={dayNum} className="flex flex-col items-center gap-1">
@@ -181,20 +205,39 @@ const DailyCheckinDialog = ({ open, onOpenChange, onSuccess }: DailyCheckinDialo
                       className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold transition-all ${
                         isChecked
                           ? "bg-success text-success-foreground shadow-md shadow-success/30"
-                          : isCurrent
+                          : isToday && canCheckin
                           ? "bg-primary/20 border-2 border-primary text-primary animate-pulse"
+                          : isToday && !canCheckin
+                          ? "bg-success/60 text-success-foreground"
+                          : isMissed
+                          ? "bg-destructive/10 text-destructive/40"
+                          : isFuture
+                          ? "bg-muted text-muted-foreground/40"
                           : "bg-muted text-muted-foreground"
                       }`}
                     >
                       {isChecked ? (
                         <Gift className="w-4 h-4" />
+                      ) : isMissed ? (
+                        <Lock className="w-3 h-3" />
                       ) : (
                         dayNum
                       )}
                     </div>
-                    <span className="text-[10px] text-muted-foreground">
+                    <span
+                      className={`text-[10px] font-medium ${
+                        isToday
+                          ? "text-primary"
+                          : isMissed
+                          ? "text-destructive/40"
+                          : "text-muted-foreground"
+                      }`}
+                    >
                       {label}
                     </span>
+                    {isToday && (
+                      <span className="text-[8px] text-primary font-bold">Hari ini</span>
+                    )}
                   </div>
                 );
               })}
@@ -202,7 +245,7 @@ const DailyCheckinDialog = ({ open, onOpenChange, onSuccess }: DailyCheckinDialo
 
             <p className="text-center text-sm text-muted-foreground">
               {canCheckin
-                ? "Check-in hari ini untuk mendapat hadiah acak!"
+                ? `Belum check-in hari ini (${DAY_LABELS[todayDayNumber - 1]}). Klaim hadiah acak!`
                 : "Anda sudah check-in hari ini. Kembali besok! 🎉"}
             </p>
 
