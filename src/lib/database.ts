@@ -32,7 +32,13 @@ export interface Product {
   image: string;
   is_active: boolean;
   created_at: string;
+  category: string;
+  promo_price: number | null;
+  promo_daily_income: number | null;
+  promo_validity: number | null;
 }
+
+export type ProductCategory = 'reguler' | 'promo' | 'vip';
 
 export interface Investment {
   id: string;

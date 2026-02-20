@@ -37,6 +37,10 @@ const AdminProducts = () => {
     vip_level: "0",
     image: "",
     description: "",
+    category: "reguler",
+    promo_price: "",
+    promo_daily_income: "",
+    promo_validity: "",
   });
   
   const [imageUploadType, setImageUploadType] = useState<"url" | "upload">("url");
@@ -56,7 +60,7 @@ const AdminProducts = () => {
   const calculateTotalIncome = (dailyIncome: number, validity: number) => dailyIncome * validity;
 
   const resetForm = () => {
-    setFormData({ name: "", price: "", daily_income: "", validity: "", vip_level: "0", image: "", description: "" });
+    setFormData({ name: "", price: "", daily_income: "", validity: "", vip_level: "0", image: "", description: "", category: "reguler", promo_price: "", promo_daily_income: "", promo_validity: "" });
   };
 
   const openCreateDialog = () => {
@@ -79,6 +83,10 @@ const AdminProducts = () => {
       vip_level: product.vip_level.toString(),
       image: product.image || "",
       description: product.description || "",
+      category: product.category || "reguler",
+      promo_price: product.promo_price?.toString() || "",
+      promo_daily_income: product.promo_daily_income?.toString() || "",
+      promo_validity: product.promo_validity?.toString() || "",
     });
     setImageUploadType("url");
     setPreviewImage(product.image || "");
@@ -160,6 +168,10 @@ const AdminProducts = () => {
       image: formData.image || "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=400&h=300&fit=crop",
       description: formData.description || "Investasi dengan return menarik",
       is_active: true,
+      category: formData.category,
+      promo_price: formData.promo_price ? parseInt(formData.promo_price) : null,
+      promo_daily_income: formData.promo_daily_income ? parseInt(formData.promo_daily_income) : null,
+      promo_validity: formData.promo_validity ? parseInt(formData.promo_validity) : null,
     };
 
     if (isCreating) {
@@ -221,7 +233,12 @@ const AdminProducts = () => {
                 <div className="flex-1 py-3 pr-3">
                   <div className="flex items-start justify-between mb-2">
                     <div><h3 className="font-semibold text-foreground">{product.name}</h3><p className="text-xs text-muted-foreground">{product.description}</p></div>
-                    <Badge variant="vip" className="text-xs">VIP {product.vip_level}</Badge>
+                     <Badge variant="vip" className="text-xs">VIP {product.vip_level}</Badge>
+                     {product.category !== 'reguler' && (
+                       <Badge className={product.category === 'promo' ? 'bg-destructive/90 text-destructive-foreground text-[10px] ml-1' : 'bg-vip-gold/90 text-secondary-foreground text-[10px] ml-1'}>
+                         {product.category === 'promo' ? '🔥 Promo' : '👑 VIP'}
+                       </Badge>
+                     )}
                   </div>
                   <div className="grid grid-cols-3 gap-2 text-xs mb-2">
                     <div><p className="text-muted-foreground">Harga</p><p className="font-semibold text-primary">{formatCurrency(product.price)}</p></div>
@@ -253,7 +270,30 @@ const AdminProducts = () => {
             <div className="bg-muted/50 rounded-lg p-3 border border-border/50">
               <div className="flex items-center justify-between"><div className="flex items-center gap-2"><TrendingUp className="w-4 h-4 text-success" /><span className="text-sm text-muted-foreground">Total Penghasilan (otomatis)</span></div><span className="font-bold text-success">{formatCurrency(calculatedTotalIncome)}</span></div>
             </div>
-            <div className="space-y-2"><Label>Level VIP</Label><Select value={formData.vip_level} onValueChange={(value) => setFormData({ ...formData, vip_level: value })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{[0, 1, 2, 3, 4, 5].map((level) => <SelectItem key={level} value={level.toString()}>VIP {level}</SelectItem>)}</SelectContent></Select></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2"><Label>Level VIP</Label><Select value={formData.vip_level} onValueChange={(value) => setFormData({ ...formData, vip_level: value })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{[0, 1, 2, 3, 4, 5].map((level) => <SelectItem key={level} value={level.toString()}>VIP {level}</SelectItem>)}</SelectContent></Select></div>
+              <div className="space-y-2"><Label>Kategori</Label><Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="reguler">Reguler</SelectItem><SelectItem value="promo">🔥 Promo</SelectItem><SelectItem value="vip">👑 VIP</SelectItem></SelectContent></Select></div>
+            </div>
+            
+            {/* Promo Fields */}
+            <div className="space-y-3 bg-muted/30 rounded-lg p-3 border border-dashed border-border">
+              <Label className="text-sm font-medium flex items-center gap-1.5">🏷️ Harga Promo <span className="text-xs text-muted-foreground font-normal">(Opsional)</span></Label>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Harga Promo</Label>
+                  <Input type="number" value={formData.promo_price} onChange={(e) => setFormData({ ...formData, promo_price: e.target.value })} placeholder="Kosongkan" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Harian Promo</Label>
+                  <Input type="number" value={formData.promo_daily_income} onChange={(e) => setFormData({ ...formData, promo_daily_income: e.target.value })} placeholder="Kosongkan" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Durasi Promo</Label>
+                  <Input type="number" value={formData.promo_validity} onChange={(e) => setFormData({ ...formData, promo_validity: e.target.value })} placeholder="Kosongkan" />
+                </div>
+              </div>
+              <p className="text-[10px] text-muted-foreground">Kosongkan field yang tidak ingin di-promo. Harga asli akan ditampilkan dengan garis coret.</p>
+            </div>
             
             {/* Image Upload Section */}
             <div className="space-y-3">
