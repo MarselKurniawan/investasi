@@ -3,10 +3,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Package, TrendingUp, Lock, Sparkles, Eye, Calendar, Zap } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
-import { getProducts, formatCurrency, Product } from "@/lib/database";
+import { getProducts, formatCurrency, Product, ProductCategory } from "@/lib/database";
 import InvestDialog from "@/components/InvestDialog";
 import ProductDetailDialog from "@/components/ProductDetailDialog";
+import ProductCard from "@/components/ProductCard";
 
 const ProductPage = () => {
   const { user, profile, refreshProfile } = useAuth();
@@ -14,6 +16,7 @@ const ProductPage = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [investOpen, setInvestOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<string>("all");
 
   const loadData = async () => {
     const productsData = await getProducts();
@@ -25,14 +28,18 @@ const ProductPage = () => {
     loadData();
   }, []);
 
-  const userVipLevel = profile?.vip_level || 1;
+  const userVipLevel = profile?.vip_level || 0;
   const balance = profile?.balance || 0;
 
-  const availableProducts = products.filter(
+  const filteredProducts = activeCategory === "all" 
+    ? products 
+    : products.filter(p => p.category === activeCategory);
+
+  const availableProducts = filteredProducts.filter(
     (product) => product.vip_level <= userVipLevel
   );
 
-  const lockedProducts = products.filter(
+  const lockedProducts = filteredProducts.filter(
     (product) => product.vip_level > userVipLevel
   );
 
@@ -51,6 +58,11 @@ const ProductPage = () => {
       setDetailOpen(false);
       setTimeout(() => setInvestOpen(true), 200);
     }
+  };
+
+  const categoryCount = (cat: string) => {
+    if (cat === "all") return products.length;
+    return products.filter(p => p.category === cat).length;
   };
 
   return (
@@ -74,100 +86,54 @@ const ProductPage = () => {
         </div>
       </div>
 
-      {/* Available Products */}
-      <div>
-        <div className="flex items-center gap-2 mb-4">
-          <Package className="w-5 h-5 text-primary" />
-          <h2 className="text-lg font-heading font-bold text-foreground">Tersedia untuk Anda</h2>
-        </div>
-
-        <div className="space-y-4">
-          {availableProducts.map((product) => (
-            <Card 
-              key={product.id} 
-              className="shadow-card transition-all duration-300 overflow-hidden border-primary/20 hover:border-primary/50"
-            >
-              <CardContent className="p-0">
-                <div className="flex">
-                  {/* Product Image - Left Side */}
-                  <div className="relative w-32 sm:w-40 flex-shrink-0">
-                    <img 
-                      src={product.image} 
-                      alt={product.name}
-                      className="w-full h-full object-cover min-h-[180px]"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent to-card/50" />
-                    <Badge variant="vip" className="absolute top-2 left-2 text-xs">
-                      VIP {product.vip_level}
-                    </Badge>
-                  </div>
-
-                  {/* Product Info - Right Side */}
-                  <div className="flex-1 p-4 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-start justify-between mb-1">
-                        <h3 className="font-semibold text-foreground text-lg leading-tight">{product.name}</h3>
-                      </div>
-                      <p className="text-xs text-muted-foreground mb-3">{product.description}</p>
-
-                      {/* Price */}
-                      <p className="text-xl font-bold text-primary mb-3">
-                        {formatCurrency(product.price)}
-                      </p>
-
-                      {/* Stats Grid */}
-                      <div className="grid grid-cols-2 gap-2 mb-3">
-                        <div className="flex items-center gap-1.5">
-                          <TrendingUp className="w-3.5 h-3.5 text-success" />
-                          <div>
-                            <p className="text-[10px] text-muted-foreground">Harian</p>
-                            <p className="text-xs font-bold text-success">{formatCurrency(product.daily_income)}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="w-3.5 h-3.5 text-accent" />
-                          <div>
-                            <p className="text-[10px] text-muted-foreground">Durasi</p>
-                            <p className="text-xs font-bold text-foreground">{product.validity} hari</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* ROI Badge */}
-                      <div className="flex items-center gap-1.5 mb-3">
-                        <Zap className="w-3.5 h-3.5 text-vip-gold" />
-                        <span className="text-xs font-semibold text-vip-gold">
-                          ROI: {((product.total_income / product.price - 1) * 100).toFixed(0)}% • Total: {formatCurrency(product.total_income)}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => handleViewDetail(product)}
-                      >
-                        <Eye className="w-3.5 h-3.5 mr-1.5" />
-                        Detail
-                      </Button>
-                      <Button 
-                        size="sm"
-                        className="flex-1" 
-                        onClick={() => handleInvest(product)}
-                      >
-                        Investasi
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+      {/* Category Tabs */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm pb-2 -mx-4 px-4 pt-1">
+        <Tabs value={activeCategory} onValueChange={setActiveCategory}>
+          <TabsList className="w-full grid grid-cols-4">
+            <TabsTrigger value="all" className="text-xs">
+              Semua ({categoryCount("all")})
+            </TabsTrigger>
+            <TabsTrigger value="reguler" className="text-xs">
+              Reguler ({categoryCount("reguler")})
+            </TabsTrigger>
+            <TabsTrigger value="promo" className="text-xs">
+              🔥 Promo ({categoryCount("promo")})
+            </TabsTrigger>
+            <TabsTrigger value="vip" className="text-xs">
+              👑 VIP ({categoryCount("vip")})
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
+
+      {/* Available Products */}
+      {availableProducts.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <Package className="w-5 h-5 text-primary" />
+            <h2 className="text-lg font-heading font-bold text-foreground">Tersedia untuk Anda</h2>
+          </div>
+
+          <div className="space-y-4">
+            {availableProducts.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onViewDetail={handleViewDetail}
+                onInvest={handleInvest}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {availableProducts.length === 0 && lockedProducts.length === 0 && (
+        <div className="text-center py-12 text-muted-foreground">
+          <Package className="w-12 h-12 mx-auto mb-3 opacity-50" />
+          <p>Tidak ada produk dalam kategori ini</p>
+        </div>
+      )}
 
       {/* Locked Products */}
       {lockedProducts.length > 0 && (
@@ -194,7 +160,6 @@ const ProductPage = () => {
                 
                 <CardContent className="p-0">
                   <div className="flex">
-                    {/* Product Image */}
                     <div className="relative w-24 flex-shrink-0">
                       <img 
                         src={product.image} 
@@ -202,8 +167,6 @@ const ProductPage = () => {
                         className="w-full h-full object-cover min-h-[100px] grayscale"
                       />
                     </div>
-
-                    {/* Product Info */}
                     <div className="flex-1 p-3">
                       <h3 className="font-semibold text-foreground text-sm mb-1">{product.name}</h3>
                       <p className="text-sm font-bold text-primary/50">{formatCurrency(product.price)}</p>

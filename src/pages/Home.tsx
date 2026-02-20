@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +7,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { getProducts, getInvestments, formatCurrency, canClaimToday, updateInvestment, updateProfile, createTransaction, processReferralRabat, Product, Investment } from "@/lib/database";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTheme } from "@/hooks/useTheme";
 import RechargeDialog from "@/components/RechargeDialog";
 import WithdrawDialog from "@/components/WithdrawDialog";
@@ -32,6 +33,7 @@ const Home = () => {
   const [claimed, setClaimed] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
   const [checkinOpen, setCheckinOpen] = useState(false);
+  const [productCategory, setProductCategory] = useState("all");
 
   const loadData = async () => {
     if (user) {
@@ -61,7 +63,10 @@ const Home = () => {
   const balance = profile?.balance || 0;
   const vipLevel = profile?.vip_level || 1;
 
-  const popularProducts = products.slice(0, 2);
+  const displayProducts = useMemo(() => {
+    const filtered = productCategory === "all" ? products : products.filter(p => p.category === productCategory);
+    return filtered.slice(0, 4);
+  }, [products, productCategory]);
 
   const handleInvest = (product: Product) => {
     setSelectedProduct(product);
@@ -302,9 +307,19 @@ const Home = () => {
           </Link>
         </div>
 
+        {/* Category Tabs */}
+        <Tabs value={productCategory} onValueChange={setProductCategory} className="mb-4">
+          <TabsList className="w-full grid grid-cols-4">
+            <TabsTrigger value="all" className="text-xs">Semua</TabsTrigger>
+            <TabsTrigger value="reguler" className="text-xs">Reguler</TabsTrigger>
+            <TabsTrigger value="promo" className="text-xs">🔥 Promo</TabsTrigger>
+            <TabsTrigger value="vip" className="text-xs">👑 VIP</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
         <div className="space-y-4">
-          {popularProducts.map((product) => (
-              <Card 
+          {displayProducts.map((product) => (
+            <Card 
               key={product.id} 
               className="transition-all duration-300 cursor-pointer border-primary/20 hover:border-primary/50 overflow-hidden"
             >
@@ -319,6 +334,12 @@ const Home = () => {
                 <Badge variant="vip" className="absolute top-3 right-3 text-xs">
                   VIP {product.vip_level}
                 </Badge>
+                {product.category === 'promo' && (
+                  <Badge className="absolute top-3 left-3 bg-destructive/90 text-destructive-foreground text-[10px]">🔥 PROMO</Badge>
+                )}
+                {product.category === 'vip' && (
+                  <Badge className="absolute top-3 left-3 bg-vip-gold/90 text-secondary-foreground text-[10px]">👑 VIP</Badge>
+                )}
               </div>
 
               <CardContent className="p-4">
@@ -329,18 +350,39 @@ const Home = () => {
                   </div>
                   <div className="text-right">
                     <p className="text-sm text-muted-foreground">Harga</p>
-                    <p className="text-lg font-bold text-primary">{formatCurrency(product.price)}</p>
+                    {product.promo_price ? (
+                      <div>
+                        <p className="text-xs text-muted-foreground line-through">{formatCurrency(product.price)}</p>
+                        <p className="text-lg font-bold text-destructive">{formatCurrency(product.promo_price)}</p>
+                      </div>
+                    ) : (
+                      <p className="text-lg font-bold text-primary">{formatCurrency(product.price)}</p>
+                    )}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-3 gap-3 py-3 border-t border-border/50">
                   <div>
                     <p className="text-xs text-muted-foreground mb-1">Harian</p>
-                    <p className="text-sm font-semibold text-success">{formatCurrency(product.daily_income)}</p>
+                    {product.promo_daily_income ? (
+                      <div>
+                        <p className="text-[10px] text-muted-foreground line-through">{formatCurrency(product.daily_income)}</p>
+                        <p className="text-sm font-semibold text-success">{formatCurrency(product.promo_daily_income)}</p>
+                      </div>
+                    ) : (
+                      <p className="text-sm font-semibold text-success">{formatCurrency(product.daily_income)}</p>
+                    )}
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground mb-1">Durasi</p>
-                    <p className="text-sm font-semibold text-foreground">{product.validity} Hari</p>
+                    {product.promo_validity ? (
+                      <div>
+                        <p className="text-[10px] text-muted-foreground line-through">{product.validity} Hari</p>
+                        <p className="text-sm font-semibold text-foreground">{product.promo_validity} Hari</p>
+                      </div>
+                    ) : (
+                      <p className="text-sm font-semibold text-foreground">{product.validity} Hari</p>
+                    )}
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground mb-1">Total</p>
@@ -354,6 +396,11 @@ const Home = () => {
               </CardContent>
             </Card>
           ))}
+          {displayProducts.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground text-sm">
+              Tidak ada produk dalam kategori ini
+            </div>
+          )}
         </div>
       </div>
 

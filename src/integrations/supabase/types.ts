@@ -186,6 +186,7 @@ export type Database = {
       }
       products: {
         Row: {
+          category: string
           created_at: string | null
           daily_income: number
           description: string | null
@@ -194,11 +195,15 @@ export type Database = {
           is_active: boolean | null
           name: string
           price: number
+          promo_daily_income: number | null
+          promo_price: number | null
+          promo_validity: number | null
           total_income: number
           validity: number
           vip_level: number | null
         }
         Insert: {
+          category?: string
           created_at?: string | null
           daily_income: number
           description?: string | null
@@ -207,11 +212,15 @@ export type Database = {
           is_active?: boolean | null
           name: string
           price: number
+          promo_daily_income?: number | null
+          promo_price?: number | null
+          promo_validity?: number | null
           total_income: number
           validity: number
           vip_level?: number | null
         }
         Update: {
+          category?: string
           created_at?: string | null
           daily_income?: number
           description?: string | null
@@ -220,6 +229,9 @@ export type Database = {
           is_active?: boolean | null
           name?: string
           price?: number
+          promo_daily_income?: number | null
+          promo_price?: number | null
+          promo_validity?: number | null
           total_income?: number
           validity?: number
           vip_level?: number | null
