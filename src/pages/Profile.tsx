@@ -186,9 +186,7 @@ const Profile = () => {
               <Copy className="w-3 h-3" />
             </button>
           </div>
-          <p className="text-[10px] text-muted-foreground mt-0.5">
-            Bergabung: {new Date(profile.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}
-          </p>
+          <p className="text-[10px] text-muted-foreground">{profile.email}</p>
         </div>
       </div>
 
