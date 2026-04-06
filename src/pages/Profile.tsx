@@ -187,7 +187,7 @@ const Profile = () => {
             </button>
           </div>
           <p className="text-[10px] text-muted-foreground mt-0.5">
-            Bergabung: {new Date(profile.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}
+            Bergabung: {new Date(profile.updated_at || '').toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}
           </p>
         </div>
       </div>
