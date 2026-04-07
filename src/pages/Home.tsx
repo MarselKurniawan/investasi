@@ -279,8 +279,8 @@ const Home = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
-                <p className="text-xs sm:text-sm text-muted-foreground">Investasi Aktif</p>
-                <p className="text-base sm:text-lg font-bold text-foreground">{activeInvestments.length} Paket</p>
+                <p className="text-[10px] text-muted-foreground">Investasi Aktif</p>
+                <p className="text-sm font-bold text-foreground">{activeInvestments.length} Paket</p>
               </div>
               <div className="text-right min-w-0">
                 <p className="text-xs sm:text-sm text-muted-foreground">Income Harian</p>
