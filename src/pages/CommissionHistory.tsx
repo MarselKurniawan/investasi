@@ -84,8 +84,8 @@ const CommissionHistory = () => {
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div>
-          <h1 className="text-xl font-heading font-bold text-foreground">Riwayat Komisi & Rabat</h1>
-          <p className="text-sm text-muted-foreground">Detail penghasilan dari tim Anda</p>
+          <h1 className="text-base font-heading font-bold text-foreground">Riwayat Komisi & Rabat</h1>
+          <p className="text-[11px] text-muted-foreground">Detail penghasilan dari tim Anda</p>
         </div>
       </div>
 
