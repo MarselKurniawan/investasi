@@ -283,8 +283,8 @@ const Home = () => {
                 <p className="text-sm font-bold text-foreground">{activeInvestments.length} Paket</p>
               </div>
               <div className="text-right min-w-0">
-                <p className="text-xs sm:text-sm text-muted-foreground">Income Harian</p>
-                <p className="text-base sm:text-lg font-bold text-success truncate">
+                <p className="text-[10px] text-muted-foreground">Income Harian</p>
+                <p className="text-sm font-bold text-success break-all">
                   {formatCurrency(totalDailyIncome)}
                 </p>
               </div>
