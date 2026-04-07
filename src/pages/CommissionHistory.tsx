@@ -108,7 +108,7 @@ const CommissionHistory = () => {
               <Percent className="w-4 h-4 text-accent" />
               <p className="text-xs font-medium text-muted-foreground">Total Rabat</p>
             </div>
-            <p className="text-xl font-bold text-accent">{formatCurrency(profile?.rabat_income || totalRabat)}</p>
+            <p className="text-sm font-bold text-accent">{formatCurrency(profile?.rabat_income || totalRabat)}</p>
             <p className="text-xs text-muted-foreground mt-1">{rabatTransactions.length} transaksi</p>
           </CardContent>
         </Card>

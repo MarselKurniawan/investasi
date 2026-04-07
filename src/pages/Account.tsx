@@ -227,7 +227,7 @@ const Account = () => {
                 <Users className="w-4 h-4 text-primary" />
                 <p className="text-xs font-medium text-muted-foreground">Team Income</p>
               </div>
-              <p className="text-xl font-bold text-primary">{formatCurrency(monitoringData.teamIncome)}</p>
+              <p className="text-sm font-bold text-primary">{formatCurrency(monitoringData.teamIncome)}</p>
             </CardContent>
           </Card>
         </div>

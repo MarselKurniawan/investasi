@@ -148,7 +148,7 @@ const Statistics = () => {
               <Activity className="w-4 h-4 text-accent" />
               <p className="text-xs text-muted-foreground">Komisi Referral</p>
             </div>
-            <p className="text-xl font-bold text-accent">{formatCurrency(profile?.team_income || 0)}</p>
+            <p className="text-sm font-bold text-accent">{formatCurrency(profile?.team_income || 0)}</p>
           </CardContent>
         </Card>
       </div>

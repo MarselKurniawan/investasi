@@ -349,14 +349,14 @@ const Home = () => {
                     <p className="text-[10px] text-muted-foreground">{product.description}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm text-muted-foreground">Harga</p>
+                    <p className="text-[10px] text-muted-foreground">Harga</p>
                     {product.promo_price ? (
                       <div>
-                        <p className="text-xs text-muted-foreground line-through">{formatCurrency(product.price)}</p>
-                        <p className="text-lg font-bold text-destructive">{formatCurrency(product.promo_price)}</p>
+                        <p className="text-[10px] text-muted-foreground line-through">{formatCurrency(product.price)}</p>
+                        <p className="text-sm font-bold text-destructive">{formatCurrency(product.promo_price)}</p>
                       </div>
                     ) : (
-                      <p className="text-lg font-bold text-primary">{formatCurrency(product.price)}</p>
+                      <p className="text-sm font-bold text-primary">{formatCurrency(product.price)}</p>
                     )}
                   </div>
                 </div>
