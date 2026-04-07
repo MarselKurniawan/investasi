@@ -253,7 +253,7 @@ const Home = () => {
                 </p>
               </div>
               <div className="text-right shrink-0">
-                <p className="text-sm sm:text-lg font-bold text-success truncate max-w-[100px] sm:max-w-none">
+                <p className="text-xs font-bold text-success truncate max-w-[100px] sm:max-w-none">
                   +{formatCurrency(totalClaimable)}
                 </p>
                 <Button 
