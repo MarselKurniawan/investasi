@@ -185,7 +185,7 @@ const Account = () => {
 
       {/* Monitoring Dashboard */}
       <div>
-        <h2 className="text-lg font-heading font-bold text-foreground mb-4">Monitoring</h2>
+        <h2 className="text-sm font-heading font-bold text-foreground mb-3">Monitoring</h2>
         <div className="grid grid-cols-2 gap-3">
           <Card className="shadow-card bg-gradient-to-br from-success/20 to-success/5 border-success/20">
             <CardContent className="p-4">
