@@ -203,7 +203,7 @@ const Account = () => {
                 <ArrowUpRight className="w-4 h-4 text-success" />
                 <p className="text-xs font-medium text-muted-foreground">Total Recharge</p>
               </div>
-              <p className="text-xl font-bold text-foreground">
+              <p className="text-sm font-bold text-foreground break-all">
                 {formatCurrency(monitoringData.totalRecharge)}
               </p>
             </CardContent>
