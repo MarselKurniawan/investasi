@@ -97,7 +97,7 @@ const CommissionHistory = () => {
               <Users className="w-4 h-4 text-success" />
               <p className="text-xs font-medium text-muted-foreground">Total Komisi</p>
             </div>
-            <p className="text-xl font-bold text-success">{formatCurrency(profile?.team_income || totalCommission)}</p>
+            <p className="text-sm font-bold text-success">{formatCurrency(profile?.team_income || totalCommission)}</p>
             <p className="text-xs text-muted-foreground mt-1">{commissionTransactions.length} transaksi</p>
           </CardContent>
         </Card>
