@@ -193,7 +193,7 @@ const Account = () => {
                 <TrendingUp className="w-4 h-4 text-success" />
                 <p className="text-xs font-medium text-muted-foreground">Total Income</p>
               </div>
-              <p className="text-xl font-bold text-success">{formatCurrency(monitoringData.totalIncome)}</p>
+              <p className="text-sm font-bold text-success">{formatCurrency(monitoringData.totalIncome)}</p>
             </CardContent>
           </Card>
 
