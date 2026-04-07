@@ -154,10 +154,10 @@ const Home = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-foreground">
+          <h1 className="text-lg font-heading font-bold text-foreground">
             {profile ? `Halo, ${profile.name}!` : "Selamat Datang!"}
           </h1>
-          <p className="text-sm text-muted-foreground">Kelola investasi Anda dengan mudah</p>
+          <p className="text-[11px] text-muted-foreground">Kelola investasi Anda dengan mudah</p>
         </div>
         <div className="flex items-center gap-1">
           <Badge variant="vip" className="text-sm px-3 py-1">
