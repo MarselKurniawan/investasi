@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
@@ -17,9 +19,12 @@ import {
   createCoupon,
   deleteCoupon,
   formatCurrency,
+  getVipSettings,
+  updateVipSetting,
   Profile,
   Transaction,
   Coupon,
+  VipSetting,
 } from "@/lib/database";
 import {
   Users,
@@ -39,6 +44,7 @@ import {
   UserPlus,
   DollarSign,
   Clock,
+  Crown,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import BackupDialog from "@/components/BackupDialog";
@@ -58,7 +64,10 @@ const Admin = () => {
   const [isLoading, setIsLoading] = useState<string | null>(null);
   const [couponDialogOpen, setCouponDialogOpen] = useState(false);
   const [backupDialogOpen, setBackupDialogOpen] = useState(false);
+  const [vipDialogOpen, setVipDialogOpen] = useState(false);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [vipSettings, setVipSettings] = useState<VipSetting[]>([]);
+  const [editingVip, setEditingVip] = useState<Record<number, number>>({});
   const [txFilter, setTxFilter] = useState<string>("all");
 
   const enrichTransactions = (txData: Transaction[], profilesData: Profile[]): PendingTx[] => {
@@ -74,16 +83,21 @@ const Admin = () => {
   };
 
   const loadData = async () => {
-    const [profilesData, txData, allTxData, couponData] = await Promise.all([
+    const [profilesData, txData, allTxData, couponData, vipData] = await Promise.all([
       getAllProfiles(),
       getPendingTransactions(),
       getAllTransactions(),
       getCoupons(),
+      getVipSettings(),
     ]);
     setProfiles(profilesData);
     setPendingTransactions(enrichTransactions(txData, profilesData));
     setAllTransactions(enrichTransactions(allTxData, profilesData));
     setCoupons(couponData);
+    setVipSettings(vipData);
+    const vipMap: Record<number, number> = {};
+    vipData.forEach(v => { vipMap[v.vip_level] = v.required_members; });
+    setEditingVip(vipMap);
   };
 
   useEffect(() => {
@@ -101,6 +115,22 @@ const Admin = () => {
       toast({ title: "Kupon Dibuat", description: `Kode: ${code}` });
       loadData();
     }
+  };
+
+  const handleSaveVipSettings = async () => {
+    setIsLoading('vip');
+    let success = true;
+    for (const [level, members] of Object.entries(editingVip)) {
+      const result = await updateVipSetting(Number(level), members);
+      if (!result) success = false;
+    }
+    if (success) {
+      toast({ title: "VIP Setting Disimpan", description: "Threshold berhasil diupdate" });
+    } else {
+      toast({ title: "Gagal menyimpan", variant: "destructive" });
+    }
+    setIsLoading(null);
+    loadData();
   };
 
   const handleDeleteCoupon = async (id: string) => {
@@ -272,6 +302,9 @@ const Admin = () => {
           </div>
         </div>
         <div className="flex gap-1.5">
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setVipDialogOpen(true)} title="VIP Setting">
+            <Crown className="w-3.5 h-3.5" />
+          </Button>
           <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setBackupDialogOpen(true)} title="Backup">
             <Database className="w-3.5 h-3.5" />
           </Button>
@@ -375,6 +408,37 @@ const Admin = () => {
               ))}
               {coupons.length === 0 && <p className="text-center text-muted-foreground py-4">Belum ada kupon</p>}
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
+      {/* VIP Settings Dialog */}
+      <Dialog open={vipDialogOpen} onOpenChange={setVipDialogOpen}>
+        <DialogContent className="w-[95vw] max-w-md mx-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Crown className="w-5 h-5 text-secondary" />Setting VIP Level</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">Atur jumlah member (A+B+C) yang dibutuhkan untuk naik level VIP.</p>
+            {[1, 2, 3, 4, 5].map((level) => (
+              <div key={level} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                <Badge className="bg-secondary/20 text-secondary border-0 font-bold shrink-0">VIP {level}</Badge>
+                <div className="flex-1">
+                  <Label className="text-[10px] text-muted-foreground">Minimal Member</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={editingVip[level] ?? 0}
+                    onChange={(e) => setEditingVip(prev => ({ ...prev, [level]: parseInt(e.target.value) || 0 }))}
+                    className="h-8 text-sm"
+                  />
+                </div>
+              </div>
+            ))}
+            <Button onClick={handleSaveVipSettings} className="w-full" disabled={isLoading === 'vip'}>
+              {isLoading === 'vip' ? 'Menyimpan...' : 'Simpan Setting'}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

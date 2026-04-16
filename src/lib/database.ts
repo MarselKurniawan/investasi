@@ -618,3 +618,37 @@ export const deleteProduct = async (id: string): Promise<boolean> => {
   }
   return true;
 };
+
+// VIP Settings
+export interface VipSetting {
+  id: string;
+  vip_level: number;
+  required_members: number;
+  updated_at: string;
+}
+
+export const getVipSettings = async (): Promise<VipSetting[]> => {
+  const { data, error } = await supabase
+    .from('vip_settings')
+    .select('*')
+    .order('vip_level', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching VIP settings:', error);
+    return [];
+  }
+  return (data || []) as unknown as VipSetting[];
+};
+
+export const updateVipSetting = async (vipLevel: number, requiredMembers: number): Promise<boolean> => {
+  const { error } = await supabase
+    .from('vip_settings')
+    .update({ required_members: requiredMembers, updated_at: new Date().toISOString() } as any)
+    .eq('vip_level', vipLevel);
+
+  if (error) {
+    console.error('Error updating VIP setting:', error);
+    return false;
+  }
+  return true;
+};

@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Profile } from './database';
+import { Profile, getVipSettings } from './database';
 
 export interface TeamMember extends Profile {
   level: 'A' | 'B' | 'C';
@@ -26,14 +26,25 @@ export const RABAT_RATES = {
   C: 2, // 2%
 };
 
-// VIP level thresholds based on total team members (A+B+C)
-export const VIP_THRESHOLDS = [
+// Default VIP thresholds (fallback if DB fetch fails)
+export let VIP_THRESHOLDS = [
   { level: 5, members: 300 },
   { level: 4, members: 200 },
   { level: 3, members: 100 },
   { level: 2, members: 50 },
   { level: 1, members: 10 },
 ];
+
+// Load VIP thresholds from database
+export const loadVipThresholds = async () => {
+  const settings = await getVipSettings();
+  if (settings.length > 0) {
+    VIP_THRESHOLDS = settings
+      .map(s => ({ level: s.vip_level, members: s.required_members }))
+      .sort((a, b) => b.level - a.level);
+  }
+  return VIP_THRESHOLDS;
+};
 
 // Calculate VIP level from total team count
 export const calculateVipLevel = (totalMembers: number): number => {
