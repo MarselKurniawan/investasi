@@ -302,6 +302,9 @@ const Admin = () => {
           </div>
         </div>
         <div className="flex gap-1.5">
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setVipDialogOpen(true)} title="VIP Setting">
+            <Crown className="w-3.5 h-3.5" />
+          </Button>
           <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setBackupDialogOpen(true)} title="Backup">
             <Database className="w-3.5 h-3.5" />
           </Button>
