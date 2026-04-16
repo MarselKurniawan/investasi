@@ -3,7 +3,7 @@ import { NavLink } from "@/components/NavLink";
 import { Home, Package, Users, UserCircle, LayoutGrid } from "lucide-react";
 import QuickMenuSheet from "@/components/QuickMenuSheet";
 
-const Layout = ({ children }: { children: React.ReactNode }) => {
+const Layout = ({ children, wide = false }: { children: React.ReactNode; wide?: boolean }) => {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
