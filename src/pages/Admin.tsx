@@ -259,7 +259,7 @@ const Admin = () => {
   );
 
   return (
-    <div className="space-y-5 p-4 pt-5 pb-24 max-w-5xl mx-auto">
+    <div className="space-y-4 p-4 pt-5 pb-24">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
