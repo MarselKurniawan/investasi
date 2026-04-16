@@ -45,6 +45,7 @@ import {
   DollarSign,
   Clock,
   Crown,
+  Crown,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import BackupDialog from "@/components/BackupDialog";
