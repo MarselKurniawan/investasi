@@ -190,7 +190,7 @@ const Admin = () => {
         <p className="text-[10px] text-muted-foreground mb-1">{label}</p>
         <div className="flex items-center gap-1.5">
           <Icon className={`w-3.5 h-3.5 shrink-0 ${color}`} />
-          <p className={`text-sm font-bold ${color} whitespace-nowrap`}>{value}</p>
+          <p className={`text-[11px] sm:text-sm font-bold ${color} whitespace-nowrap`}>{value}</p>
         </div>
       </CardContent>
     </Card>
