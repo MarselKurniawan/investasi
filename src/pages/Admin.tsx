@@ -184,16 +184,13 @@ const Admin = () => {
     return <Badge className={`${map[type] || "bg-muted text-muted-foreground"} border-0 text-[10px] font-medium capitalize`}>{type}</Badge>;
   };
 
-  const StatCard = ({ icon: Icon, label, value, color = "text-foreground", sub }: { icon: any; label: string; value: string | number; color?: string; sub?: string }) => (
-    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-      <div className="w-9 h-9 rounded-lg bg-background flex items-center justify-center shrink-0">
-        <Icon className={`w-4 h-4 ${color}`} />
+  const StatCard = ({ icon: Icon, label, value, color = "text-foreground" }: { icon: any; label: string; value: string | number; color?: string }) => (
+    <div className="p-3 rounded-lg bg-muted/50">
+      <div className="flex items-center gap-1.5 mb-1">
+        <Icon className={`w-3.5 h-3.5 shrink-0 ${color}`} />
+        <p className="text-[10px] text-muted-foreground truncate">{label}</p>
       </div>
-      <div className="min-w-0">
-        <p className="text-[10px] text-muted-foreground leading-tight">{label}</p>
-        <p className={`text-sm font-bold ${color} break-all leading-tight`}>{value}</p>
-        {sub && <p className="text-[10px] text-muted-foreground">{sub}</p>}
-      </div>
+      <p className={`text-xs font-bold ${color} truncate`}>{value}</p>
     </div>
   );
 
