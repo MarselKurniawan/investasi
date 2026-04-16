@@ -117,6 +117,22 @@ const Admin = () => {
     }
   };
 
+  const handleSaveVipSettings = async () => {
+    setIsLoading('vip');
+    let success = true;
+    for (const [level, members] of Object.entries(editingVip)) {
+      const result = await updateVipSetting(Number(level), members);
+      if (!result) success = false;
+    }
+    if (success) {
+      toast({ title: "VIP Setting Disimpan", description: "Threshold berhasil diupdate" });
+    } else {
+      toast({ title: "Gagal menyimpan", variant: "destructive" });
+    }
+    setIsLoading(null);
+    loadData();
+  };
+
   const handleDeleteCoupon = async (id: string) => {
     await deleteCoupon(id);
     toast({ title: "Kupon Dihapus" });
