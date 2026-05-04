@@ -249,6 +249,7 @@ export type Database = {
           rabat_income: number | null
           referral_code: string | null
           referred_by: string | null
+          spin_tickets: number
           team_income: number | null
           total_income: number | null
           total_recharge: number | null
@@ -267,6 +268,7 @@ export type Database = {
           rabat_income?: number | null
           referral_code?: string | null
           referred_by?: string | null
+          spin_tickets?: number
           team_income?: number | null
           total_income?: number | null
           total_recharge?: number | null
@@ -285,6 +287,7 @@ export type Database = {
           rabat_income?: number | null
           referral_code?: string | null
           referred_by?: string | null
+          spin_tickets?: number
           team_income?: number | null
           total_income?: number | null
           total_recharge?: number | null
@@ -361,6 +364,27 @@ export type Database = {
           required_members?: number
           updated_at?: string | null
           vip_level?: number
+        }
+        Relationships: []
+      }
+      wheel_spins: {
+        Row: {
+          created_at: string
+          id: string
+          reward_amount: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reward_amount?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reward_amount?: number
+          user_id?: string
         }
         Relationships: []
       }
