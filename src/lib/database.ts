@@ -272,6 +272,126 @@ export const canClaimToday = (lastClaimedAt: string | null): boolean => {
   return lastClaim.toDateString() !== now.toDateString();
 };
 
+// Auto-claim daily profits based on purchase hour.
+// For each active investment, if (now - anchor) >= 24h, credit daily_income
+// once per elapsed 24h cycle (capped by days_remaining). Anchor is
+// last_claimed_at if present, otherwise created_at (purchase time).
+export const autoClaimDueProfits = async (
+  userId: string
+): Promise<{ totalClaimed: number; cycles: number }> => {
+  const investments = await getInvestments(userId);
+  const active = investments.filter((i) => i.status === 'active' && i.days_remaining > 0);
+  if (active.length === 0) return { totalClaimed: 0, cycles: 0 };
+
+  const profile = await getProfile(userId);
+  if (!profile) return { totalClaimed: 0, cycles: 0 };
+
+  const now = Date.now();
+  const DAY = 24 * 60 * 60 * 1000;
+  let totalClaimed = 0;
+  let totalCycles = 0;
+
+  for (const inv of active) {
+    const anchorStr = inv.last_claimed_at || inv.created_at;
+    if (!anchorStr) continue;
+    const anchor = new Date(anchorStr).getTime();
+    const elapsed = now - anchor;
+    if (elapsed < DAY) continue;
+
+    const possibleCycles = Math.floor(elapsed / DAY);
+    const cycles = Math.min(possibleCycles, inv.days_remaining);
+    if (cycles <= 0) continue;
+
+    const credit = inv.daily_income * cycles;
+    const newDaysRemaining = inv.days_remaining - cycles;
+    const newAnchor = new Date(anchor + cycles * DAY).toISOString();
+
+    await updateInvestment(inv.id, {
+      total_earned: inv.total_earned + credit,
+      days_remaining: newDaysRemaining,
+      last_claimed_at: newAnchor,
+      status: newDaysRemaining <= 0 ? 'completed' : 'active',
+    });
+
+    await createTransaction({
+      user_id: userId,
+      type: 'income',
+      amount: credit,
+      status: 'success',
+      description: `Auto profit ${cycles}x dari ${inv.product_name}`,
+    });
+
+    await processReferralRabat(userId, credit);
+
+    totalClaimed += credit;
+    totalCycles += cycles;
+  }
+
+  if (totalClaimed > 0) {
+    await updateProfile(userId, {
+      balance: profile.balance + totalClaimed,
+      total_income: profile.total_income + totalClaimed,
+    });
+  }
+
+  return { totalClaimed, cycles: totalCycles };
+};
+
+// Lucky Wheel: spin and persist reward
+export interface WheelSpin {
+  id: string;
+  user_id: string;
+  reward_amount: number;
+  created_at: string;
+}
+
+const WHEEL_PRIZES = [1000, 2000, 3000, 5000, 8000, 12000, 20000, 50000];
+const WHEEL_WEIGHTS = [30, 22, 17, 12, 8, 6, 4, 1];
+
+export const pickWheelPrize = (): { index: number; amount: number } => {
+  const total = WHEEL_WEIGHTS.reduce((s, w) => s + w, 0);
+  let r = Math.random() * total;
+  for (let i = 0; i < WHEEL_PRIZES.length; i++) {
+    r -= WHEEL_WEIGHTS[i];
+    if (r <= 0) return { index: i, amount: WHEEL_PRIZES[i] };
+  }
+  return { index: 0, amount: WHEEL_PRIZES[0] };
+};
+
+export const getWheelPrizes = (): number[] => [...WHEEL_PRIZES];
+
+export const consumeSpinTicket = async (
+  userId: string,
+  amount: number
+): Promise<boolean> => {
+  const profile = await getProfile(userId);
+  if (!profile || (profile as unknown as { spin_tickets?: number }).spin_tickets! <= 0) return false;
+  const tickets = (profile as unknown as { spin_tickets: number }).spin_tickets;
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({
+      balance: profile.balance + amount,
+      total_income: profile.total_income + amount,
+      spin_tickets: tickets - 1,
+    } as never)
+    .eq('user_id', userId);
+  if (error) {
+    console.error('Error consuming spin ticket:', error);
+    return false;
+  }
+
+  await supabase.from('wheel_spins').insert({ user_id: userId, reward_amount: amount } as never);
+  await createTransaction({
+    user_id: userId,
+    type: 'income',
+    amount,
+    status: 'success',
+    description: `Hadiah Roda Keberuntungan`,
+  });
+  return true;
+};
+
 // Transaction functions
 export const getTransactions = async (userId: string): Promise<Transaction[]> => {
   const { data, error } = await supabase
