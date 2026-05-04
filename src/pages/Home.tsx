@@ -6,7 +6,7 @@ import { ArrowUpRight, ArrowDownRight, Wallet, LogOut, ShieldCheck, Sparkles, Gi
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { getProducts, getInvestments, formatCurrency, canClaimToday, updateInvestment, updateProfile, createTransaction, processReferralRabat, Product, Investment } from "@/lib/database";
+import { getProducts, getInvestments, formatCurrency, canClaimToday, updateInvestment, updateProfile, createTransaction, processReferralRabat, autoClaimDueProfits, Product, Investment } from "@/lib/database";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTheme } from "@/hooks/useTheme";
 import RechargeDialog from "@/components/RechargeDialog";
@@ -37,6 +37,14 @@ const Home = () => {
 
   const loadData = async () => {
     if (user) {
+      // Auto-credit profits whose 24h cycle (from purchase hour) has elapsed
+      const auto = await autoClaimDueProfits(user.id);
+      if (auto.totalClaimed > 0) {
+        toast({
+          title: "Auto Profit Diterima",
+          description: `+${formatCurrency(auto.totalClaimed)} dari ${auto.cycles} siklus`,
+        });
+      }
       const [investmentsData, productsData] = await Promise.all([
         getInvestments(user.id),
         getProducts()
