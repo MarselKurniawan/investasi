@@ -35,6 +35,7 @@ import BankAccountDialog from "@/components/BankAccountDialog";
 import CompanyProfileDialog from "@/components/CompanyProfileDialog";
 import RechargeDialog from "@/components/RechargeDialog";
 import WithdrawDialog from "@/components/WithdrawDialog";
+import LuckyWheelDialog from "@/components/LuckyWheelDialog";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -48,6 +49,7 @@ const Profile = () => {
   const [companyDialogOpen, setCompanyDialogOpen] = useState(false);
   const [rechargeOpen, setRechargeOpen] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
+  const [wheelOpen, setWheelOpen] = useState(false);
   const [showBalance, setShowBalance] = useState(true);
 
   const openProfileDialog = (mode: "profile" | "password") => {
@@ -97,9 +99,9 @@ const Profile = () => {
     },
     {
       icon: Share2,
-      label: "Peralatan",
-      description: "Bentuk tim & undang",
-      href: "/team",
+      label: "Keberuntungan",
+      description: `${(profile as unknown as { spin_tickets?: number })?.spin_tickets ?? 0} tiket spin`,
+      onClick: () => setWheelOpen(true),
       color: "text-destructive",
       bgColor: "bg-destructive/5",
     },
@@ -233,7 +235,10 @@ const Profile = () => {
           <Card 
             key={item.label} 
             className="cursor-pointer hover:border-primary/30 transition-colors"
-            onClick={() => item.href && navigate(item.href)}
+            onClick={() => {
+              if ((item as { onClick?: () => void }).onClick) (item as { onClick: () => void }).onClick();
+              else if ((item as { href?: string }).href) navigate((item as { href: string }).href);
+            }}
           >
             <CardContent className="p-3 flex items-center justify-between">
               <div>
@@ -297,6 +302,7 @@ const Profile = () => {
       <CompanyProfileDialog open={companyDialogOpen} onOpenChange={setCompanyDialogOpen} />
       <RechargeDialog open={rechargeOpen} onOpenChange={setRechargeOpen} onSuccess={refreshProfile} />
       <WithdrawDialog open={withdrawOpen} onOpenChange={setWithdrawOpen} balance={profile.balance} onSuccess={refreshProfile} />
+      <LuckyWheelDialog open={wheelOpen} onOpenChange={setWheelOpen} onSuccess={refreshProfile} />
     </div>
   );
 };
